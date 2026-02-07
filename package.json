@@ -107,7 +107,8 @@
 		"yaml": "^2.7.1"
 	},
 	"overrides": {
-		"lodash-es": "4.17.23"
+		"lodash-es": "4.17.23",
+		"cookie": "^0.7.0"
 	},
 	"engines": {
 		"node": ">=18.13.0 <=22.x.x",
