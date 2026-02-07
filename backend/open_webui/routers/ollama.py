@@ -328,7 +328,6 @@ def merge_ollama_models_lists(model_lists):
     key=lambda _, user: f"ollama_all_models_{user.id}" if user else "ollama_all_models",
 )
 async def get_all_models(request: Request, user: UserModel = None):
-    log.info("get_all_models()")
     if request.app.state.config.ENABLE_OLLAMA_API:
         request_tasks = []
         for idx, url in enumerate(request.app.state.config.OLLAMA_BASE_URLS):
