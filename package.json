@@ -106,6 +106,9 @@
 		"exceljs": "^4.4.0",
 		"yaml": "^2.7.1"
 	},
+	"overrides": {
+		"lodash-es": "4.17.23"
+	},
 	"engines": {
 		"node": ">=18.13.0 <=22.x.x",
 		"npm": ">=6.0.0"

@@ -4,7 +4,6 @@
 
 	import {
 		copyToClipboard,
-		initMermaid,
 		renderMermaidDiagram,
 		renderVegaVisualization
 	} from '$lib/utils';
@@ -82,19 +81,11 @@
 		}, 1000);
 	};
 
-	let mermaid = null;
-	const renderMermaid = async (code) => {
-		if (!mermaid) {
-			mermaid = await initMermaid();
-		}
-		return await renderMermaidDiagram(mermaid, code);
-	};
-
 	const render = async () => {
 		onUpdate(token);
 		if (lang === 'mermaid' && (token?.raw ?? '').slice(-4).includes('```')) {
 			try {
-				renderHTML = await renderMermaid(code);
+				renderHTML = await renderMermaidDiagram(code);
 			} catch (error) {
 				console.error('Failed to render mermaid diagram:', error);
 				const errorMsg = error instanceof Error ? error.message : String(error);
