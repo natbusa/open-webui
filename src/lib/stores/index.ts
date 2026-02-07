@@ -166,7 +166,6 @@ type Settings = {
 	promptAutocomplete?: boolean;
 	hapticFeedback?: boolean;
 	responseAutoCopy?: any;
-	richTextInput?: boolean;
 	params?: any;
 	userLocation?: any;
 	webSearch?: any;

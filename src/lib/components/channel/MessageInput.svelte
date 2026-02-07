@@ -26,18 +26,14 @@
 	import { uploadFile } from '$lib/apis/files';
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
 
-	import { getSuggestionRenderer } from '../common/RichTextInput/suggestions';
-	import CommandSuggestionList from '../chat/MessageInput/CommandSuggestionList.svelte';
-
 	import InputMenu from './MessageInput/InputMenu.svelte';
 	import Tooltip from '../common/Tooltip.svelte';
-	import RichTextInput from '../common/RichTextInput.svelte';
+	import ChatTextarea from '../common/ChatTextarea.svelte';
 	import VoiceRecording from '../chat/MessageInput/VoiceRecording.svelte';
 	import FileItem from '../common/FileItem.svelte';
 	import Image from '../common/Image.svelte';
 	import FilesOverlay from '../chat/MessageInput/FilesOverlay.svelte';
 	import InputVariablesModal from '../chat/MessageInput/InputVariablesModal.svelte';
-	import MentionList from './MessageInput/MentionList.svelte';
 	import Skeleton from '../chat/Messages/Skeleton.svelte';
 	import XMark from '../icons/XMark.svelte';
 
@@ -304,7 +300,6 @@
 
 	export let showCommands = false;
 	$: showCommands = ['/'].includes(command?.charAt(0));
-	let suggestions = null;
 
 	const screenCaptureHandler = async () => {
 		try {
@@ -561,62 +556,6 @@
 	}
 
 	onMount(async () => {
-		suggestions = [
-			{
-				char: '@',
-				render: getSuggestionRenderer(MentionList, {
-					i18n,
-					triggerChar: '@',
-					modelSuggestions: true,
-					userSuggestions
-				})
-			},
-			...(channelSuggestions
-				? [
-						{
-							char: '#',
-							render: getSuggestionRenderer(MentionList, {
-								i18n,
-								triggerChar: '#',
-								channelSuggestions
-							})
-						}
-					]
-				: []),
-			{
-				char: '/',
-				render: getSuggestionRenderer(CommandSuggestionList, {
-					i18n,
-					onSelect: (e) => {
-						const { type, data } = e;
-
-						if (type === 'model') {
-							console.log('Selected model:', data);
-						}
-
-						document.getElementById('chat-input')?.focus();
-					},
-
-					insertTextHandler: insertTextAtCursor,
-					onUpload: (e) => {
-						const { type, data } = e;
-
-						if (type === 'file') {
-							if (files.find((f) => f.id === data.id)) {
-								return;
-							}
-							files = [
-								...files,
-								{
-									...data,
-									status: 'processed'
-								}
-							];
-						}
-					}
-				})
-			}
-		];
 		loaded = true;
 
 		window.setTimeout(() => {
@@ -862,83 +801,59 @@
 								<div
 									class="scrollbar-hidden rtl:text-right ltr:text-left bg-transparent dark:text-gray-100 outline-hidden w-full pt-2.5 pb-[5px] px-1 resize-none h-fit max-h-96 overflow-auto"
 								>
-									{#key $settings?.richTextInput && $settings?.showFormattingToolbar}
-										<RichTextInput
-											id="chat-input"
-											bind:this={chatInputElement}
-											json={true}
-											messageInput={true}
-											editable={!disabled}
-											{placeholder}
-											richText={$settings?.richTextInput ?? true}
-											showFormattingToolbar={$settings?.showFormattingToolbar ?? false}
-											shiftEnter={!($settings?.ctrlEnterToSend ?? false) &&
-												!$mobile &&
-												!(
-													'ontouchstart' in window ||
-													navigator.maxTouchPoints > 0 ||
-													navigator.msMaxTouchPoints > 0
-												)}
-											largeTextAsFile={$settings?.largeTextAsFile ?? false}
-											floatingMenuPlacement={'top-start'}
-											{suggestions}
-											onChange={(e) => {
-												const { md } = e;
-												content = md;
-												command = getCommand();
-											}}
-											on:keydown={async (e) => {
-												e = e.detail.event;
-												const isCtrlPressed = e.ctrlKey || e.metaKey; // metaKey is for Cmd key on Mac
+									<ChatTextarea
+									id="chat-input"
+									bind:this={chatInputElement}
+									editable={!disabled}
+									{placeholder}
+									onChange={(e) => {
+										const { md } = e;
+										content = md;
+										command = getCommand();
+									}}
+									on:keydown={async (e) => {
+										e = e.detail;
+										const isCtrlPressed = e.ctrlKey || e.metaKey;
 
-												const suggestionsContainerElement =
-													document.getElementById('suggestions-container');
+										if (
+											!$mobile ||
+											!(
+												'ontouchstart' in window ||
+												navigator.maxTouchPoints > 0 ||
+												navigator.msMaxTouchPoints > 0
+											)
+										) {
+											if (e.keyCode === 13 && !e.shiftKey) {
+												e.preventDefault();
+											}
 
-												if (!suggestionsContainerElement) {
-													if (
-														!$mobile ||
-														!(
-															'ontouchstart' in window ||
-															navigator.maxTouchPoints > 0 ||
-															navigator.msMaxTouchPoints > 0
-														)
-													) {
-														// Prevent Enter key from creating a new line
-														// Uses keyCode '13' for Enter key for chinese/japanese keyboards
-														if (e.keyCode === 13 && !e.shiftKey) {
-															e.preventDefault();
-														}
+											if (content !== '' && e.keyCode === 13 && !e.shiftKey) {
+												submitHandler();
+											}
+										}
 
-														// Submit the content when Enter key is pressed
-														if (content !== '' && e.keyCode === 13 && !e.shiftKey) {
-															submitHandler();
-														}
-													}
+										if (e.key === 'Escape') {
+											console.info('Escape');
+											replyToMessage = null;
+										}
+									}}
+									on:paste={async (e) => {
+										e = e.detail;
+										console.log(e);
+
+										const clipboardData = e.clipboardData || window.clipboardData;
+
+										if (clipboardData && clipboardData.items) {
+											for (const item of clipboardData.items) {
+												const file = item.getAsFile();
+												if (file) {
+													await inputFilesHandler([file]);
+													e.preventDefault();
 												}
-
-												if (e.key === 'Escape') {
-													console.info('Escape');
-													replyToMessage = null;
-												}
-											}}
-											on:paste={async (e) => {
-												e = e.detail.event;
-												console.log(e);
-
-												const clipboardData = e.clipboardData || window.clipboardData;
-
-												if (clipboardData && clipboardData.items) {
-													for (const item of clipboardData.items) {
-														const file = item.getAsFile();
-														if (file) {
-															await inputFilesHandler([file]);
-															e.preventDefault();
-														}
-													}
-												}
-											}}
-										/>
-									{/key}
+											}
+										}
+									}}
+								/>
 								</div>
 							</div>
 

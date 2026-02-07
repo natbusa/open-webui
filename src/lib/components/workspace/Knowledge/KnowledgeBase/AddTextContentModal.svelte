@@ -7,7 +7,6 @@
 	const dispatch = createEventDispatcher();
 
 	import Modal from '$lib/components/common/Modal.svelte';
-	import RichTextInput from '$lib/components/common/RichTextInput.svelte';
 	import XMark from '$lib/components/icons/XMark.svelte';
 	import MicSolid from '$lib/components/icons/MicSolid.svelte';
 	import Tooltip from '$lib/components/common/Tooltip.svelte';
@@ -67,10 +66,10 @@
 					</div>
 
 					<div class=" flex-1 w-full h-full">
-						<RichTextInput
+						<textarea
 							bind:value={content}
 							placeholder={$i18n.t('Write something...')}
-							preserveBreaks={true}
+							class="w-full h-full bg-transparent outline-none resize-none text-sm"
 						/>
 					</div>
 				</div>

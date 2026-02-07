@@ -1,9 +1,7 @@
 <script lang="ts">
 	import { onMount, getContext } from 'svelte';
-	import { settings } from '$lib/stores';
 
 	import Drawer from './Drawer.svelte';
-	import RichTextInput from './RichTextInput.svelte';
 
 	const i18n = getContext('i18n');
 
@@ -11,15 +9,11 @@
 
 	export let show = false;
 	export let value = null;
-	export let inputContent = null;
-
-	export let autocomplete = false;
-	export let generateAutoCompletion = null;
 
 	export let onChange = () => {};
 	export let onClose = () => {};
 
-	let inputElement;
+	let textareaElement;
 </script>
 
 <Drawer bind:show>
@@ -53,26 +47,13 @@
 
 		<div class="flex w-full px-4 dark:text-gray-200 min-h-full flex-1">
 			<div class="flex-1 w-full min-h-full">
-				<RichTextInput
-					bind:this={inputElement}
+				<textarea
+					bind:this={textareaElement}
 					{id}
-					onChange={(content) => {
-						value = content.md;
-						inputContent = content;
-
-						onChange(content);
-					}}
-					json={true}
-					value={inputContent?.json}
-					html={inputContent?.html}
-					richText={$settings?.richTextInput ?? true}
-					messageInput={true}
-					showFormattingToolbar={$settings?.showFormattingToolbar ?? false}
-					floatingMenuPlacement={'top-start'}
-					insertPromptAsRichText={$settings?.insertPromptAsRichText ?? false}
-					{autocomplete}
-					{generateAutoCompletion}
-				/>
+					bind:value
+					class="w-full h-full bg-transparent outline-none resize-none text-sm"
+					oninput={() => onChange({ md: value })}
+				></textarea>
 			</div>
 		</div>
 	</div>

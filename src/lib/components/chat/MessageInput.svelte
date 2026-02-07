@@ -37,7 +37,6 @@
 	import {
 		convertHeicToJpeg,
 		compressImage,
-		createMessagesList,
 		extractContentFromFile,
 		extractCurlyBraceWords,
 		extractInputVariables,
@@ -50,21 +49,18 @@
 		getWeekday
 	} from '$lib/utils';
 	import { uploadFile } from '$lib/apis/files';
-	import { generateAutoCompletion } from '$lib/apis';
 	import { deleteFileById } from '$lib/apis/files';
 	import { getSessionUser } from '$lib/apis/auths';
 	import { getTools } from '$lib/apis/tools';
 
 	import { WEBUI_BASE_URL, WEBUI_API_BASE_URL, PASTED_TEXT_CHARACTER_LIMIT } from '$lib/constants';
 
-	import { getSuggestionRenderer } from '../common/RichTextInput/suggestions';
-
 	import InputMenu from './MessageInput/InputMenu.svelte';
 	import VoiceRecording from './MessageInput/VoiceRecording.svelte';
 	import FilesOverlay from './MessageInput/FilesOverlay.svelte';
 	import ToolServersModal from './ToolServersModal.svelte';
 
-	import RichTextInput from '../common/RichTextInput.svelte';
+	import ChatTextarea from '../common/ChatTextarea.svelte';
 	import Tooltip from '../common/Tooltip.svelte';
 	import FileItem from '../common/FileItem.svelte';
 	import Image from '../common/Image.svelte';
@@ -82,7 +78,6 @@
 	import Component from '../icons/Component.svelte';
 	import PlusAlt from '../icons/PlusAlt.svelte';
 
-	import CommandSuggestionList from './MessageInput/CommandSuggestionList.svelte';
 	import Knobs from '../icons/Knobs.svelte';
 	import ValvesModal from '../workspace/common/ValvesModal.svelte';
 	import PageEdit from '../icons/PageEdit.svelte';
@@ -119,8 +114,6 @@
 	export let imageGenerationEnabled = false;
 	export let webSearchEnabled = false;
 	export let codeInterpreterEnabled = false;
-
-	let inputContent = null;
 
 	let showInputVariablesModal = false;
 	let inputVariablesModalCallback = (variableValues) => {};
@@ -376,38 +369,10 @@
 	let command = '';
 	export let showCommands = false;
 	$: showCommands = ['/', '#', '@'].includes(command?.charAt(0)) || '\\#' === command?.slice(0, 2);
-	let suggestions = null;
-
 	let showTools = false;
 
 	let loaded = false;
 	let recording = false;
-
-	let isComposing = false;
-	// Safari has a bug where compositionend is not triggered correctly #16615
-	// when using the virtual keyboard on iOS.
-	let compositionEndedAt = -2e8;
-	const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-	function inOrNearComposition(event: Event) {
-		if (isComposing) {
-			return true;
-		}
-		// See https://www.stum.de/2016/06/24/handling-ime-events-in-javascript/.
-		// On Japanese input method editors (IMEs), the Enter key is used to confirm character
-		// selection. On Safari, when Enter is pressed, compositionend and keydown events are
-		// emitted. The keydown event triggers newline insertion, which we don't want.
-		// This method returns true if the keydown event should be ignored.
-		// We only ignore it once, as pressing Enter a second time *should* insert a newline.
-		// Furthermore, the keydown event timestamp must be close to the compositionEndedAt timestamp.
-		// This guards against the case where compositionend is triggered without the keyboard
-		// (e.g. character confirmation may be done with the mouse), and keydown is triggered
-		// afterwards- we wouldn't want to ignore the keydown event in this case.
-		if (isSafari && Math.abs(event.timeStamp - compositionEndedAt) < 500) {
-			compositionEndedAt = -2e8;
-			return true;
-		}
-		return false;
-	}
 
 	let chatInputContainerElement;
 	let chatInputElement;
@@ -807,113 +772,6 @@
 	};
 
 	onMount(async () => {
-		suggestions = [
-			{
-				char: '@',
-				render: getSuggestionRenderer(CommandSuggestionList, {
-					i18n,
-					onSelect: (e) => {
-						const { type, data } = e;
-
-						if (type === 'model') {
-							atSelectedModel = data;
-						}
-
-						document.getElementById('chat-input')?.focus();
-					},
-
-					insertTextHandler: insertTextAtCursor,
-					onUpload: (e) => {
-						const { type, data } = e;
-
-						if (type === 'file') {
-							if (files.find((f) => f.id === data.id)) {
-								return;
-							}
-							files = [
-								...files,
-								{
-									...data,
-									status: 'processed'
-								}
-							];
-						} else {
-							onUpload(e);
-						}
-					}
-				})
-			},
-			{
-				char: '/',
-				render: getSuggestionRenderer(CommandSuggestionList, {
-					i18n,
-					onSelect: (e) => {
-						const { type, data } = e;
-
-						if (type === 'model') {
-							atSelectedModel = data;
-						}
-
-						document.getElementById('chat-input')?.focus();
-					},
-
-					insertTextHandler: insertTextAtCursor,
-					onUpload: (e) => {
-						const { type, data } = e;
-
-						if (type === 'file') {
-							if (files.find((f) => f.id === data.id)) {
-								return;
-							}
-							files = [
-								...files,
-								{
-									...data,
-									status: 'processed'
-								}
-							];
-						} else {
-							onUpload(e);
-						}
-					}
-				})
-			},
-			{
-				char: '#',
-				render: getSuggestionRenderer(CommandSuggestionList, {
-					i18n,
-					onSelect: (e) => {
-						const { type, data } = e;
-
-						if (type === 'model') {
-							atSelectedModel = data;
-						}
-
-						document.getElementById('chat-input')?.focus();
-					},
-
-					insertTextHandler: insertTextAtCursor,
-					onUpload: (e) => {
-						const { type, data } = e;
-
-						if (type === 'file') {
-							if (files.find((f) => f.id === data.id)) {
-								return;
-							}
-							files = [
-								...files,
-								{
-									...data,
-									status: 'processed'
-								}
-							];
-						} else {
-							onUpload(e);
-						}
-					}
-				})
-			}
-		];
 		loaded = true;
 
 		window.setTimeout(() => {
@@ -981,10 +839,8 @@
 <InputModal
 	bind:show={showInputModal}
 	bind:value={prompt}
-	bind:inputContent
 	onChange={(content) => {
-		console.log(content);
-		chatInputElement?.setContent(content?.json ?? null);
+		chatInputElement?.setText(content?.md ?? '');
 	}}
 	onClose={async () => {
 		await tick();
@@ -1250,172 +1106,110 @@
 										</div>
 									{/if}
 
-									{#if suggestions}
-										{#key $settings?.richTextInput ?? true}
-											{#key $settings?.showFormattingToolbar ?? false}
-												<RichTextInput
-													bind:this={chatInputElement}
-													id="chat-input"
-													editable={!showInputModal}
-													onChange={(content) => {
-														prompt = content.md;
-														inputContent = content;
-														command = getCommand();
-													}}
-													json={true}
-													richText={$settings?.richTextInput ?? true}
-													messageInput={true}
-													showFormattingToolbar={$settings?.showFormattingToolbar ?? false}
-													floatingMenuPlacement={'top-start'}
-													insertPromptAsRichText={$settings?.insertPromptAsRichText ?? false}
-													shiftEnter={!($settings?.ctrlEnterToSend ?? false) &&
-														!$mobile &&
-														!(
-															'ontouchstart' in window ||
-															navigator.maxTouchPoints > 0 ||
-															navigator.msMaxTouchPoints > 0
-														)}
-													placeholder={placeholder ? placeholder : $i18n.t('Send a Message')}
-													largeTextAsFile={($settings?.largeTextAsFile ?? false) && !shiftKey}
-													autocomplete={$config?.features?.enable_autocomplete_generation &&
-														($settings?.promptAutocomplete ?? false)}
-													generateAutoCompletion={async (text) => {
-														if (selectedModelIds.length === 0 || !selectedModelIds.at(0)) {
-															toast.error($i18n.t('Please select a model first.'));
-														}
+									<ChatTextarea
+									bind:this={chatInputElement}
+									id="chat-input"
+									editable={!showInputModal}
+									placeholder={placeholder ? placeholder : $i18n.t('Send a Message')}
+									onChange={(content) => {
+										prompt = content.md;
+										command = getCommand();
+									}}
+										on:keydown={async (e) => {
+										e = e.detail;
 
-														const res = await generateAutoCompletion(
-															localStorage.token,
-															selectedModelIds.at(0),
-															text,
-															history?.currentId
-																? createMessagesList(history, history.currentId)
-																: null
-														).catch((error) => {
-															console.log(error);
+										const isCtrlPressed = e.ctrlKey || e.metaKey;
 
-															return null;
-														});
+										if (e.key === 'Escape') {
+											stopResponse();
+										}
 
-														console.log(res);
-														return res;
-													}}
-													{suggestions}
-													oncompositionstart={() => (isComposing = true)}
-													oncompositionend={(e) => {
-														compositionEndedAt = e.timeStamp;
-														isComposing = false;
-													}}
-													on:keydown={async (e) => {
-														e = e.detail.event;
+										if (prompt === '' && e.key == 'ArrowUp') {
+											e.preventDefault();
 
-														const isCtrlPressed = e.ctrlKey || e.metaKey; // metaKey is for Cmd key on Mac
-														const suggestionsContainerElement =
-															document.getElementById('suggestions-container');
+											const userMessageElement = [
+												...document.getElementsByClassName('user-message')
+											]?.at(-1);
 
-														if (e.key === 'Escape') {
-															stopResponse();
-														}
+											if (userMessageElement) {
+												userMessageElement.scrollIntoView({ block: 'center' });
+												const editButton = [
+													...document.getElementsByClassName('edit-user-message-button')
+												]?.at(-1);
 
-														if (prompt === '' && e.key == 'ArrowUp') {
+												editButton?.click();
+											}
+										}
+
+										if (
+											!$mobile ||
+											!(
+												'ontouchstart' in window ||
+												navigator.maxTouchPoints > 0 ||
+												navigator.msMaxTouchPoints > 0
+											)
+										) {
+											const enterPressed =
+												($settings?.ctrlEnterToSend ?? false)
+													? (e.key === 'Enter' || e.keyCode === 13) && isCtrlPressed
+													: (e.key === 'Enter' || e.keyCode === 13) && !e.shiftKey;
+
+											if (enterPressed) {
+												e.preventDefault();
+												if (prompt !== '' || files.length > 0) {
+													dispatch('submit', prompt);
+												}
+											}
+										}
+
+										if (e.key === 'Escape') {
+											console.log('Escape');
+											atSelectedModel = undefined;
+											selectedToolIds = [];
+											selectedFilterIds = [];
+
+											webSearchEnabled = false;
+											imageGenerationEnabled = false;
+											codeInterpreterEnabled = false;
+										}
+									}}
+									on:paste={async (e) => {
+										e = e.detail;
+										console.log(e);
+
+										const clipboardData = e.clipboardData || window.clipboardData;
+
+										if (clipboardData && clipboardData.items) {
+											for (const item of clipboardData.items) {
+												if (item.type === 'text/plain') {
+													if (($settings?.largeTextAsFile ?? false) && !shiftKey) {
+														const text = clipboardData.getData('text/plain');
+
+														if (text.length > PASTED_TEXT_CHARACTER_LIMIT) {
 															e.preventDefault();
-
-															const userMessageElement = [
-																...document.getElementsByClassName('user-message')
-															]?.at(-1);
-
-															if (userMessageElement) {
-																userMessageElement.scrollIntoView({ block: 'center' });
-																const editButton = [
-																	...document.getElementsByClassName('edit-user-message-button')
-																]?.at(-1);
-
-																editButton?.click();
-															}
-														}
-
-														if (!suggestionsContainerElement) {
-															if (
-																!$mobile ||
-																!(
-																	'ontouchstart' in window ||
-																	navigator.maxTouchPoints > 0 ||
-																	navigator.msMaxTouchPoints > 0
-																)
-															) {
-																if (inOrNearComposition(e)) {
-																	return;
+															const blob = new Blob([text], { type: 'text/plain' });
+															const file = new File(
+																[blob],
+																`Pasted_Text_${Date.now()}.txt`,
+																{
+																	type: 'text/plain'
 																}
+															);
 
-																// Uses keyCode '13' for Enter key for chinese/japanese keyboards.
-																//
-																// Depending on the user's settings, it will send the message
-																// either when Enter is pressed or when Ctrl+Enter is pressed.
-																const enterPressed =
-																	($settings?.ctrlEnterToSend ?? false)
-																		? (e.key === 'Enter' || e.keyCode === 13) && isCtrlPressed
-																		: (e.key === 'Enter' || e.keyCode === 13) && !e.shiftKey;
-
-																if (enterPressed) {
-																	e.preventDefault();
-																	if (prompt !== '' || files.length > 0) {
-																		dispatch('submit', prompt);
-																	}
-																}
-															}
+															await uploadFileHandler(file, true, { context: 'full' });
 														}
-
-														if (e.key === 'Escape') {
-															console.log('Escape');
-															atSelectedModel = undefined;
-															selectedToolIds = [];
-															selectedFilterIds = [];
-
-															webSearchEnabled = false;
-															imageGenerationEnabled = false;
-															codeInterpreterEnabled = false;
-														}
-													}}
-													on:paste={async (e) => {
-														e = e.detail.event;
-														console.log(e);
-
-														const clipboardData = e.clipboardData || window.clipboardData;
-
-														if (clipboardData && clipboardData.items) {
-															for (const item of clipboardData.items) {
-																if (item.type === 'text/plain') {
-																	if (($settings?.largeTextAsFile ?? false) && !shiftKey) {
-																		const text = clipboardData.getData('text/plain');
-
-																		if (text.length > PASTED_TEXT_CHARACTER_LIMIT) {
-																			e.preventDefault();
-																			const blob = new Blob([text], { type: 'text/plain' });
-																			const file = new File(
-																				[blob],
-																				`Pasted_Text_${Date.now()}.txt`,
-																				{
-																					type: 'text/plain'
-																				}
-																			);
-
-																			await uploadFileHandler(file, true, { context: 'full' });
-																		}
-																	}
-																} else {
-																	const file = item.getAsFile();
-																	if (file) {
-																		await inputFilesHandler([file]);
-																		e.preventDefault();
-																	}
-																}
-															}
-														}
-													}}
-												/>
-											{/key}
-										{/key}
-									{/if}
+													}
+												} else {
+													const file = item.getAsFile();
+													if (file) {
+														await inputFilesHandler([file]);
+														e.preventDefault();
+													}
+												}
+											}
+										}
+									}}
+								/>
 								</div>
 							</div>
 

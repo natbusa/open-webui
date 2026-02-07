@@ -45,11 +45,6 @@
 
 	let displayMultiModelResponsesInTabs = false;
 
-	let richTextInput = true;
-	let showFormattingToolbar = false;
-	let insertPromptAsRichText = false;
-	let promptAutocomplete = false;
-
 	let largeTextAsFile = false;
 
 	let insertSuggestionPrompt = false;
@@ -211,11 +206,6 @@
 
 		displayMultiModelResponsesInTabs = $settings?.displayMultiModelResponsesInTabs ?? false;
 		chatFadeStreamingText = $settings?.chatFadeStreamingText ?? true;
-
-		richTextInput = $settings?.richTextInput ?? true;
-		showFormattingToolbar = $settings?.showFormattingToolbar ?? false;
-		insertPromptAsRichText = $settings?.insertPromptAsRichText ?? false;
-		promptAutocomplete = $settings?.promptAutocomplete ?? false;
 
 		insertSuggestionPrompt = $settings?.insertSuggestionPrompt ?? false;
 		keepFollowUpPrompts = $settings?.keepFollowUpPrompts ?? false;
@@ -1075,86 +1065,6 @@
 					</button>
 				</div>
 			</div>
-
-			<div>
-				<div class=" py-0.5 flex w-full justify-between">
-					<div id="rich-input-label" class=" self-center text-xs">
-						{$i18n.t('Rich Text Input for Chat')}
-					</div>
-
-					<div class="flex items-center gap-2 p-1">
-						<Switch
-							tooltip={true}
-							ariaLabelledbyId="rich-input-label"
-							bind:state={richTextInput}
-							on:change={() => {
-								saveSettings({ richTextInput });
-							}}
-						/>
-					</div>
-				</div>
-			</div>
-
-			{#if $config?.features?.enable_autocomplete_generation}
-				<div>
-					<div class=" py-0.5 flex w-full justify-between">
-						<div id="prompt-autocompletion-label" class=" self-center text-xs">
-							{$i18n.t('Prompt Autocompletion')}
-						</div>
-
-						<div class="flex items-center gap-2 p-1">
-							<Switch
-								ariaLabelledbyId="prompt-autocompletion-label"
-								tooltip={true}
-								bind:state={promptAutocomplete}
-								on:change={() => {
-									saveSettings({ promptAutocomplete });
-								}}
-							/>
-						</div>
-					</div>
-				</div>
-			{/if}
-
-			{#if richTextInput}
-				<div>
-					<div class=" py-0.5 flex w-full justify-between">
-						<div id="show-formatting-toolbar-label" class=" self-center text-xs">
-							{$i18n.t('Show Formatting Toolbar')}
-						</div>
-
-						<div class="flex items-center gap-2 p-1">
-							<Switch
-								ariaLabelledbyId="show-formatting-toolbar-label"
-								tooltip={true}
-								bind:state={showFormattingToolbar}
-								on:change={() => {
-									saveSettings({ showFormattingToolbar });
-								}}
-							/>
-						</div>
-					</div>
-				</div>
-
-				<div>
-					<div class=" py-0.5 flex w-full justify-between">
-						<div id="insert-prompt-as-rich-text-label" class=" self-center text-xs">
-							{$i18n.t('Insert Prompt as Rich Text')}
-						</div>
-
-						<div class="flex items-center gap-2 p-1">
-							<Switch
-								ariaLabelledbyId="insert-prompt-as-rich-text-label"
-								tooltip={true}
-								bind:state={insertPromptAsRichText}
-								on:change={() => {
-									saveSettings({ insertPromptAsRichText });
-								}}
-							/>
-						</div>
-					</div>
-				</div>
-			{/if}
 
 			<div>
 				<div class=" py-0.5 flex w-full justify-between">
