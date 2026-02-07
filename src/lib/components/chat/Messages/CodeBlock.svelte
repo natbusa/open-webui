@@ -21,7 +21,7 @@
 	import ChevronUp from '$lib/components/icons/ChevronUp.svelte';
 	import ChevronUpDown from '$lib/components/icons/ChevronUpDown.svelte';
 	import CommandLine from '$lib/components/icons/CommandLine.svelte';
-	import Cube from '$lib/components/icons/Cube.svelte';
+
 
 	const i18n = getContext('i18n');
 
@@ -30,11 +30,9 @@
 
 	export let onSave = (e) => {};
 	export let onUpdate = (e) => {};
-	export let onPreview = (e) => {};
 
 	export let save = false;
 	export let run = true;
-	export let preview = false;
 	export let collapsed = false;
 
 	export let token;
@@ -95,10 +93,6 @@
 		setTimeout(() => {
 			copied = false;
 		}, 1000);
-	};
-
-	const previewCode = () => {
-		onPreview(code);
 	};
 
 	const checkPythonCode = (str) => {
@@ -500,16 +494,6 @@
 						on:click={copyCode}>{copied ? $i18n.t('Copied') : $i18n.t('Copy')}</button
 					>
 
-					{#if preview && ['html', 'svg'].includes(lang)}
-						<button
-							class="flex gap-1 items-center run-code-button bg-none border-none transition rounded-md px-1.5 py-0.5 bg-white dark:bg-black"
-							on:click={previewCode}
-						>
-							<div>
-								{$i18n.t('Preview')}
-							</div>
-						</button>
-					{/if}
 				</div>
 			</div>
 

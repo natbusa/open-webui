@@ -121,8 +121,6 @@
 				'default model',
 				'defaultmodel',
 				'design',
-				'detect artifacts automatically',
-				'detectartifactsautomatically',
 				'display emoji in call',
 				'display username',
 				'displayemojiincall',

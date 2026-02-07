@@ -87,11 +87,7 @@ export const showChangelog = writable(false);
 export const showControls = writable(false);
 export const showEmbeds = writable(false);
 export const showOverview = writable(false);
-export const showArtifacts = writable(false);
 export const showCallOverlay = writable(false);
-
-export const artifactCode = writable(null);
-export const artifactContents = writable(null);
 
 export const embed = writable(null);
 
@@ -155,7 +151,6 @@ type OllamaModelDetails = {
 type Settings = {
 	pinnedModels?: never[];
 	toolServers?: never[];
-	detectArtifacts?: boolean;
 	showUpdateToast?: boolean;
 	showChangelog?: boolean;
 	showEmojiInCall?: boolean;

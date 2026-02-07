@@ -41,7 +41,6 @@
 
 	export let onSave: Function = () => {};
 	export let onUpdate: Function = () => {};
-	export let onPreview: Function = () => {};
 
 	export let onTaskClick: Function = () => {};
 	export let onSourceClick: Function = () => {};
@@ -111,7 +110,6 @@
 				code={token?.text ?? ''}
 				{attributes}
 				{save}
-				{preview}
 				edit={editCodeBlock}
 				stickyButtonsClassName={topPadding ? 'top-10' : 'top-0'}
 				onSave={(value) => {
@@ -122,7 +120,6 @@
 					});
 				}}
 				{onUpdate}
-				{onPreview}
 			/>
 		{:else}
 			{token.text}

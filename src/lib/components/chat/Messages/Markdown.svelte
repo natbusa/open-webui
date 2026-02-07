@@ -28,8 +28,6 @@
 	export let onSave = () => {};
 	export let onUpdate = () => {};
 
-	export let onPreview = () => {};
-
 	export let onSourceClick = () => {};
 	export let onTaskClick = () => {};
 
@@ -73,6 +71,5 @@
 		{onSourceClick}
 		{onSave}
 		{onUpdate}
-		{onPreview}
 	/>
 {/key}

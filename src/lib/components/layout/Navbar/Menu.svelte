@@ -12,15 +12,13 @@
 	import {
 		showOverview,
 		showControls,
-		showArtifacts,
 		mobile,
 		temporaryChatEnabled,
 		theme,
 		user,
 		settings,
 		folders,
-		showEmbeds,
-		artifactContents
+		showEmbeds
 	} from '$lib/stores';
 	import { flyAndScale } from '$lib/utils/transitions';
 	import { getChatById } from '$lib/apis/chats';
@@ -30,7 +28,6 @@
 	import Map from '$lib/components/icons/Map.svelte';
 	import Clipboard from '$lib/components/icons/Clipboard.svelte';
 	import AdjustmentsHorizontal from '$lib/components/icons/AdjustmentsHorizontal.svelte';
-	import Cube from '$lib/components/icons/Cube.svelte';
 	import Folder from '$lib/components/icons/Folder.svelte';
 	import Share from '$lib/components/icons/Share.svelte';
 	import ArchiveBox from '$lib/components/icons/ArchiveBox.svelte';
@@ -320,7 +317,6 @@
 					on:click={async () => {
 						await showControls.set(true);
 						await showOverview.set(false);
-						await showArtifacts.set(false);
 						await showEmbeds.set(false);
 					}}
 				>
@@ -335,29 +331,12 @@
 				on:click={async () => {
 					await showControls.set(true);
 					await showOverview.set(true);
-					await showArtifacts.set(false);
 					await showEmbeds.set(false);
 				}}
 			>
 				<Map className=" size-4" strokeWidth="1.5" />
 				<div class="flex items-center">{$i18n.t('Overview')}</div>
 			</DropdownMenu.Item>
-
-			{#if ($artifactContents ?? []).length > 0}
-				<DropdownMenu.Item
-					class="flex gap-2 items-center px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl select-none w-full"
-					id="chat-overview-button"
-					on:click={async () => {
-						await showControls.set(true);
-						await showArtifacts.set(true);
-						await showOverview.set(false);
-						await showEmbeds.set(false);
-					}}
-				>
-					<Cube className=" size-4" strokeWidth="1.5" />
-					<div class="flex items-center">{$i18n.t('Artifacts')}</div>
-				</DropdownMenu.Item>
-			{/if}
 
 			<hr class="border-gray-50/30 dark:border-gray-800/30 my-1" />
 

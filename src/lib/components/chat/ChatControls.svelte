@@ -9,14 +9,12 @@
 		showControls,
 		showCallOverlay,
 		showOverview,
-		showArtifacts,
 		showEmbeds
 	} from '$lib/stores';
 
 	import Controls from './Controls/Controls.svelte';
 	import CallOverlay from './MessageInput/CallOverlay.svelte';
 	import Drawer from '../common/Drawer.svelte';
-	import Artifacts from './Artifacts.svelte';
 	import Embeds from './ChatControls/Embeds.svelte';
 
 	export let history;
@@ -138,7 +136,6 @@
 	const closeHandler = () => {
 		showControls.set(false);
 		showOverview.set(false);
-		showArtifacts.set(false);
 		showEmbeds.set(false);
 
 		if ($showCallOverlay) {
@@ -160,7 +157,7 @@
 			}}
 		>
 			<div
-				class=" {$showCallOverlay || $showOverview || $showArtifacts || $showEmbeds
+				class=" {$showCallOverlay || $showOverview || $showEmbeds
 					? ' h-screen  w-full'
 					: 'px-4 py-3'} h-full"
 			>
@@ -182,8 +179,6 @@
 					</div>
 				{:else if $showEmbeds}
 					<Embeds />
-				{:else if $showArtifacts}
-					<Artifacts {history} />
 				{:else if $showOverview}
 					{#await import('./Overview.svelte') then { default: Overview }}
 						<Overview
@@ -251,7 +246,7 @@
 		{#if $showControls}
 			<div class="flex max-h-full min-h-full">
 				<div
-					class="w-full {($showOverview || $showArtifacts || $showEmbeds) && !$showCallOverlay
+					class="w-full {($showOverview || $showEmbeds) && !$showCallOverlay
 						? ' '
 						: 'px-4 py-3 bg-white dark:shadow-lg dark:bg-gray-850 '} z-40 pointer-events-auto overflow-y-auto scrollbar-hidden"
 					id="controls-container"
@@ -272,8 +267,6 @@
 						</div>
 					{:else if $showEmbeds}
 						<Embeds overlay={dragged} />
-					{:else if $showArtifacts}
-						<Artifacts {history} overlay={dragged} />
 					{:else if $showOverview}
 						{#await import('./Overview.svelte') then { default: Overview }}
 							<Overview
