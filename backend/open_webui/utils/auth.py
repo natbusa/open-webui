@@ -40,6 +40,7 @@ from open_webui.env import (
     TRUSTED_SIGNATURE_KEY,
     STATIC_DIR,
     WEBUI_AUTH_TRUSTED_EMAIL_HEADER,
+    WEBUI_NAME,
 )
 
 from fastapi import BackgroundTasks, Depends, HTTPException, Request, Response, status
@@ -83,78 +84,7 @@ def override_static(path: str, content: str):
 
     with open(file_path, "wb") as f:
         f.write(base64.b64decode(content))  # Convert Base64 back to raw binary
-
-
-def get_license_data(app, key):
-    def data_handler(data):
-        for k, v in data.items():
-            if k == "resources":
-                for p, c in v.items():
-                    globals().get("override_static", lambda a, b: None)(p, c)
-            elif k == "count":
-                setattr(app.state, "USER_COUNT", v)
-            elif k == "name":
-                setattr(app.state, "WEBUI_NAME", v)
-            elif k == "metadata":
-                setattr(app.state, "LICENSE_METADATA", v)
-
-    def handler(u):
-        res = requests.post(
-            f"{u}/api/v1/license/",
-            json={"key": key, "version": "1"},
-            timeout=5,
-        )
-
-        if getattr(res, "ok", False):
-            payload = getattr(res, "json", lambda: {})()
-            data_handler(payload)
-            return True
-        else:
-            log.error(
-                f"License: retrieval issue: {getattr(res, 'text', 'unknown error')}"
-            )
-
-    if key:
-        us = [
-            "https://api.openwebui.com",
-            "https://licenses.api.openwebui.com",
-        ]
-        try:
-            for u in us:
-                if handler(u):
-                    return True
-        except Exception as ex:
-            log.exception(f"License: Uncaught Exception: {ex}")
-
-    try:
-        if LICENSE_BLOB:
-            nl = 12
-            kb = hashlib.sha256((key.replace("-", "").upper()).encode()).digest()
-
-            def nt(b):
-                return b[:nl], b[nl:]
-
-            lb = base64.b64decode(LICENSE_BLOB)
-            ln, lt = nt(lb)
-
-            aesgcm = AESGCM(kb)
-            p = json.loads(aesgcm.decrypt(ln, lt, None))
-            pk.verify(base64.b64decode(p["s"]), p["p"].encode())
-
-            pb = base64.b64decode(p["p"])
-            pn, pt = nt(pb)
-
-            data = json.loads(aesgcm.decrypt(pn, pt, None).decode())
-            if not data.get("exp") and data.get("exp") < datetime.now().date():
-                return False
-
-            data_handler(data)
-            return True
-    except Exception as e:
-        log.error(f"License: {e}")
-
-    return False
-
+        
 
 bearer_security = HTTPBearer(auto_error=False)
 
