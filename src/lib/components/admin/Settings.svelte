@@ -86,8 +86,7 @@
 				'authentication',
 				'reverse proxy',
 				'webhook',
-				'community',
-				'channels'
+				'community'
 			]
 		},
 		{

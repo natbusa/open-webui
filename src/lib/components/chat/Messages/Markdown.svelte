@@ -6,7 +6,6 @@
 	import markedExtension from '$lib/utils/marked/extension';
 	import markedKatexExtension from '$lib/utils/marked/katex-extension';
 	import { disableSingleTilde } from '$lib/utils/marked/strikethrough-extension';
-	import { mentionExtension } from '$lib/utils/marked/mention-extension';
 
 	import MarkdownTokens from './Markdown/MarkdownTokens.svelte';
 	import footnoteExtension from '$lib/utils/marked/footnote-extension';
@@ -43,9 +42,6 @@
 	marked.use(citationExtension(options));
 	marked.use(footnoteExtension(options));
 	marked.use(disableSingleTilde);
-	marked.use({
-		extensions: [mentionExtension({ triggerChar: '@' }), mentionExtension({ triggerChar: '#' })]
-	});
 
 	$: (async () => {
 		if (content) {

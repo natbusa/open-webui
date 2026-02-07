@@ -399,7 +399,7 @@
 								<input
 									class="w-full mt-1 text-sm dark:text-gray-300 bg-transparent outline-hidden"
 									type="text"
-									placeholder={`e.g.) /api/v1/messages, /api/v1/channels`}
+									placeholder={`e.g.) /api/v1/chats, /api/v1/models`}
 									bind:value={adminConfig.API_KEYS_ALLOWED_ENDPOINTS}
 								/>
 
@@ -724,14 +724,6 @@
 							</div>
 						</div>
 					{/if}
-
-					<div class="mb-2.5 flex w-full items-center justify-between pr-2">
-						<div class=" self-center text-xs font-medium">
-							{$i18n.t('Channels')} ({$i18n.t('Beta')})
-						</div>
-
-						<Switch bind:state={adminConfig.ENABLE_CHANNELS} />
-					</div>
 
 					<div class="mb-2.5 flex w-full items-center justify-between pr-2">
 						<div class=" self-center text-xs font-medium">

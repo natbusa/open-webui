@@ -29,11 +29,7 @@ from open_webui.tools.builtin import (
     get_current_timestamp,
     calculate_timestamp,
     search_chats,
-    search_channels,
-    search_channel_messages,
     view_chat,
-    view_channel_message,
-    view_channel_thread,
     list_knowledge_bases,
     search_knowledge_bases,
     query_knowledge_bases,
@@ -169,16 +165,6 @@ def get_builtin_tools(
 
 
     # Channels tools - search channels and messages (if channels enabled globally)
-    if getattr(request.app.state.config, "ENABLE_CHANNELS", False):
-        builtin_functions.extend(
-            [
-                search_channels,
-                search_channel_messages,
-                view_channel_thread,
-                view_channel_message,
-            ]
-        )
-
     for func in builtin_functions:
         callable = get_async_tool_function_and_apply_extra_params(
             func,

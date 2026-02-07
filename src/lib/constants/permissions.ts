@@ -36,7 +36,6 @@ export const DEFAULT_PERMISSIONS = {
 	features: {
 		api_keys: false,
 		notes: true,
-		channels: true,
 		folders: true,
 		web_search: true,
 		image_generation: true,

@@ -1016,7 +1016,6 @@ async def get_admin_config(request: Request, user=Depends(get_admin_user)):
         "ENABLE_MESSAGE_RATING": request.app.state.config.ENABLE_MESSAGE_RATING,
         "ENABLE_FOLDERS": request.app.state.config.ENABLE_FOLDERS,
         "FOLDER_MAX_FILE_COUNT": request.app.state.config.FOLDER_MAX_FILE_COUNT,
-        "ENABLE_CHANNELS": request.app.state.config.ENABLE_CHANNELS,
         "ENABLE_MEMORIES": request.app.state.config.ENABLE_MEMORIES,
         "ENABLE_USER_WEBHOOKS": request.app.state.config.ENABLE_USER_WEBHOOKS,
         "ENABLE_USER_STATUS": request.app.state.config.ENABLE_USER_STATUS,
@@ -1041,7 +1040,6 @@ class AdminConfig(BaseModel):
     ENABLE_MESSAGE_RATING: bool
     ENABLE_FOLDERS: bool
     FOLDER_MAX_FILE_COUNT: Optional[int | str] = None
-    ENABLE_CHANNELS: bool
     ENABLE_MEMORIES: bool
     ENABLE_USER_WEBHOOKS: bool
     ENABLE_USER_STATUS: bool
@@ -1071,7 +1069,6 @@ async def update_admin_config(
     request.app.state.config.FOLDER_MAX_FILE_COUNT = (
         int(form_data.FOLDER_MAX_FILE_COUNT) if form_data.FOLDER_MAX_FILE_COUNT else ""
     )
-    request.app.state.config.ENABLE_CHANNELS = form_data.ENABLE_CHANNELS
     request.app.state.config.ENABLE_MEMORIES = form_data.ENABLE_MEMORIES
 
     if form_data.DEFAULT_USER_ROLE in ["pending", "user", "admin"]:
@@ -1117,7 +1114,6 @@ async def update_admin_config(
         "ENABLE_MESSAGE_RATING": request.app.state.config.ENABLE_MESSAGE_RATING,
         "ENABLE_FOLDERS": request.app.state.config.ENABLE_FOLDERS,
         "FOLDER_MAX_FILE_COUNT": request.app.state.config.FOLDER_MAX_FILE_COUNT,
-        "ENABLE_CHANNELS": request.app.state.config.ENABLE_CHANNELS,
         "ENABLE_MEMORIES": request.app.state.config.ENABLE_MEMORIES,
         "ENABLE_USER_WEBHOOKS": request.app.state.config.ENABLE_USER_WEBHOOKS,
         "ENABLE_USER_STATUS": request.app.state.config.ENABLE_USER_STATUS,
