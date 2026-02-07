@@ -141,16 +141,16 @@ li p {
 
 ::-webkit-scrollbar-thumb {
 	--tw-border-opacity: 1;
-	background-color: rgba(215, 215, 215, 0.6);
-	border-color: rgba(255, 255, 255, var(--tw-border-opacity));
+	background-color: rgba(196, 184, 168, 0.6);
+	border-color: rgba(245, 239, 232, var(--tw-border-opacity));
 	border-radius: 9999px;
 	border-width: 1px;
 }
 
 /* Dark theme scrollbar styles */
 .dark ::-webkit-scrollbar-thumb {
-	background-color: rgba(67, 67, 67, 0.6); /* Darker color for dark theme */
-	border-color: rgba(0, 0, 0, var(--tw-border-opacity));
+	background-color: rgba(107, 93, 80, 0.6); /* Darker color for dark theme */
+	border-color: rgba(26, 18, 16, var(--tw-border-opacity));
 }
 
 ::-webkit-scrollbar {
@@ -195,23 +195,23 @@ select {
 }
 
 .shimmer {
-	background: linear-gradient(90deg, #9a9b9e 25%, #2a2929 50%, #9a9b9e 75%);
+	background: linear-gradient(90deg, #a09080 25%, #4a3d32 50%, #a09080 75%);
 	background-size: 200% 100%;
 	background-clip: text;
 	-webkit-background-clip: text;
 	-webkit-text-fill-color: transparent;
 	animation: shimmer 4s linear infinite;
-	color: #818286; /* Fallback color */
+	color: #8a7a6a; /* Fallback color */
 }
 
 :global(.dark) .shimmer {
-	background: linear-gradient(90deg, #818286 25%, #eae5e5 50%, #818286 75%);
+	background: linear-gradient(90deg, #8a7a6a 25%, #f5efe8 50%, #8a7a6a 75%);
 	background-size: 200% 100%;
 	background-clip: text;
 	-webkit-background-clip: text;
 	-webkit-text-fill-color: transparent;
 	animation: shimmer 4s linear infinite;
-	color: #a1a3a7; /* Darker fallback color for dark mode */
+	color: #c4b8a8; /* Darker fallback color for dark mode */
 }
 
 @keyframes smoothFadeIn {
@@ -316,11 +316,11 @@ input[type='number'] {
 }
 
 .cm-gutters {
-	@apply !bg-white dark:!bg-black !border-none;
+	@apply !bg-gray-50 dark:!bg-gray-950 !border-none;
 }
 
 .cm-editor {
-	@apply bg-white dark:bg-black;
+	@apply bg-gray-50 dark:bg-gray-950;
 }
 
 .tippy-box[data-theme~='dark'] {
@@ -354,7 +354,7 @@ input[type='number'] {
 }
 
 .bg-gray-950-90 {
-	background-color: rgba(var(--color-gray-950, #0d0d0d), 0.9);
+	background-color: rgba(var(--color-gray-950, #0f0a07), 0.9);
 }
 
 .ProseMirror {
@@ -370,7 +370,7 @@ input[type='number'] {
 	float: left;
 	/* Below color is from tailwind, and has the proper contrast
 	text-gray-600 from: https://tailwindcss.com/docs/color */
-	color: #676767;
+	color: #6b5d50;
 	pointer-events: none;
 
 	@apply line-clamp-1 absolute;
@@ -537,7 +537,7 @@ input[type='number'] {
 
 @media (prefers-color-scheme: dark) {
 	.ProseMirror p.is-editor-empty:first-child::before {
-		color: #757575;
+		color: #8a7a6a;
 	}
 }
 
@@ -649,7 +649,7 @@ input[type='number'] {
 }
 
 .tiptap tr {
-	@apply bg-white dark:bg-gray-900 dark:border-gray-850 text-xs;
+	@apply bg-gray-50 dark:bg-gray-900 dark:border-gray-850 text-xs;
 }
 
 .tippy-box[data-theme~='transparent'] {
@@ -686,13 +686,13 @@ input[type='number'] {
 }
 
 body {
-	background: #fff;
-	color: #000;
+	background: #f5efe8;
+	color: #1a1210;
 }
 
 .dark body {
-	background: #171717;
-	color: #eee;
+	background: #1a1210;
+	color: #f5efe8;
 }
 
 /* Position the handle relative to each LI */

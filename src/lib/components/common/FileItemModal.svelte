@@ -438,28 +438,28 @@
 	:global(.excel-table-container table th) {
 		border-width: 1px;
 		border-style: solid;
-		border-color: var(--color-gray-300, #cdcdcd);
+		border-color: var(--color-gray-300, #c4b8a8);
 		padding: 0.5rem 0.75rem;
 		text-align: left;
 	}
 
 	:global(.dark .excel-table-container table td),
 	:global(.dark .excel-table-container table th) {
-		border-color: var(--color-gray-600, #676767);
+		border-color: var(--color-gray-600, #6b5d50);
 	}
 
 	:global(.excel-table-container table th) {
-		background-color: var(--color-gray-100, #ececec);
+		background-color: var(--color-gray-100, #e8ddd0);
 		font-weight: 600;
 	}
 
 	:global(.dark .excel-table-container table th) {
-		background-color: var(--color-gray-800, #333);
-		color: var(--color-gray-100, #ececec);
+		background-color: var(--color-gray-800, #362a20);
+		color: var(--color-gray-100, #e8ddd0);
 	}
 
 	:global(.excel-table-container table tr:nth-child(even)) {
-		background-color: var(--color-gray-50, #f9f9f9);
+		background-color: var(--color-gray-50, #f5efe8);
 	}
 
 	:global(.dark .excel-table-container table tr:nth-child(even)) {
@@ -467,7 +467,7 @@
 	}
 
 	:global(.excel-table-container table tr:hover) {
-		background-color: var(--color-gray-100, #ececec);
+		background-color: var(--color-gray-100, #e8ddd0);
 	}
 
 	:global(.dark .excel-table-container table tr:hover) {

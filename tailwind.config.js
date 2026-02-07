@@ -9,18 +9,24 @@ export default {
 		extend: {
 			colors: {
 				gray: {
-					50: 'var(--color-gray-50, #f9f9f9)',
-					100: 'var(--color-gray-100, #ececec)',
-					200: 'var(--color-gray-200, #e3e3e3)',
-					300: 'var(--color-gray-300, #cdcdcd)',
-					400: 'var(--color-gray-400, #b4b4b4)',
-					500: 'var(--color-gray-500, #9b9b9b)',
-					600: 'var(--color-gray-600, #676767)',
-					700: 'var(--color-gray-700, #4e4e4e)',
-					800: 'var(--color-gray-800, #333)',
-					850: 'var(--color-gray-850, #262626)',
-					900: 'var(--color-gray-900, #171717)',
-					950: 'var(--color-gray-950, #0d0d0d)'
+					50: 'var(--color-gray-50, #f5efe8)',
+					100: 'var(--color-gray-100, #e8ddd0)',
+					200: 'var(--color-gray-200, #d4c4b0)',
+					300: 'var(--color-gray-300, #c4b8a8)',
+					400: 'var(--color-gray-400, #a09080)',
+					500: 'var(--color-gray-500, #8a7a6a)',
+					600: 'var(--color-gray-600, #6b5d50)',
+					700: 'var(--color-gray-700, #4a3d32)',
+					800: 'var(--color-gray-800, #362a20)',
+					850: 'var(--color-gray-850, #2d1f18)',
+					900: 'var(--color-gray-900, #1a1210)',
+					950: 'var(--color-gray-950, #0f0a07)'
+				},
+				amber: {
+					400: '#f5a623',
+					500: '#d4883a',
+					600: '#b8722e',
+					700: '#9a5f24'
 				}
 			},
 			typography: {
