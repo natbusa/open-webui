@@ -10,7 +10,6 @@
 	import { copyToClipboard, createMessagesList } from '$lib/utils';
 
 	import {
-		showOverview,
 		showControls,
 		mobile,
 		temporaryChatEnabled,
@@ -24,7 +23,6 @@
 
 	import Dropdown from '$lib/components/common/Dropdown.svelte';
 	import Tags from '$lib/components/chat/Tags.svelte';
-	import Map from '$lib/components/icons/Map.svelte';
 	import Clipboard from '$lib/components/icons/Clipboard.svelte';
 	import AdjustmentsHorizontal from '$lib/components/icons/AdjustmentsHorizontal.svelte';
 	import Folder from '$lib/components/icons/Folder.svelte';
@@ -315,26 +313,12 @@
 					id="chat-controls-button"
 					on:click={async () => {
 						await showControls.set(true);
-						await showOverview.set(false);
-
 					}}
 				>
 					<AdjustmentsHorizontal className=" size-4" strokeWidth="1.5" />
 					<div class="flex items-center">{$i18n.t('Controls')}</div>
 				</DropdownMenu.Item>
 			{/if}
-
-			<DropdownMenu.Item
-				class="flex gap-2 items-center px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl select-none w-full"
-				id="chat-overview-button"
-				on:click={async () => {
-					await showControls.set(true);
-					await showOverview.set(true);
-				}}
-			>
-				<Map className=" size-4" strokeWidth="1.5" />
-				<div class="flex items-center">{$i18n.t('Overview')}</div>
-			</DropdownMenu.Item>
 
 			<hr class="border-gray-50/30 dark:border-gray-800/30 my-1" />
 

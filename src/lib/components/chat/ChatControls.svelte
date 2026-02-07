@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { SvelteFlowProvider } from '@xyflow/svelte';
 	import { slide } from 'svelte/transition';
 	import { Pane, PaneResizer } from 'paneforge';
 
@@ -7,8 +6,7 @@
 	import {
 		mobile,
 		showControls,
-		showCallOverlay,
-		showOverview
+		showCallOverlay
 	} from '$lib/stores';
 
 	import Controls from './Controls/Controls.svelte';
@@ -132,7 +130,6 @@
 
 	const closeHandler = () => {
 		showControls.set(false);
-		showOverview.set(false);
 
 		if ($showCallOverlay) {
 			showCallOverlay.set(false);
@@ -153,7 +150,7 @@
 			}}
 		>
 			<div
-				class=" {$showCallOverlay || $showOverview
+				class=" {$showCallOverlay
 					? ' h-screen  w-full'
 					: 'px-4 py-3'} h-full"
 			>
@@ -173,19 +170,6 @@
 							}}
 						/>
 					</div>
-				{:else if $showOverview}
-					{#await import('./Overview.svelte') then { default: Overview }}
-						<Overview
-							{history}
-							onNodeClick={(e) => {
-								const node = e.node;
-								showMessage(node.data.message, true);
-							}}
-							onClose={() => {
-								showControls.set(false);
-							}}
-						/>
-					{/await}
 				{:else}
 					<Controls
 						on:close={() => {
@@ -240,9 +224,7 @@
 		{#if $showControls}
 			<div class="flex max-h-full min-h-full">
 				<div
-					class="w-full {$showOverview && !$showCallOverlay
-						? ' '
-						: 'px-4 py-3 bg-white dark:shadow-lg dark:bg-gray-850 '} z-40 pointer-events-auto overflow-y-auto scrollbar-hidden"
+					class="w-full px-4 py-3 bg-white dark:shadow-lg dark:bg-gray-850 z-40 pointer-events-auto overflow-y-auto scrollbar-hidden"
 					id="controls-container"
 				>
 					{#if $showCallOverlay}
@@ -259,25 +241,6 @@
 								}}
 							/>
 						</div>
-					{:else if $showOverview}
-						{#await import('./Overview.svelte') then { default: Overview }}
-							<Overview
-								{history}
-								onNodeClick={(e) => {
-									const node = e.node;
-									if (node?.data?.message?.favorite) {
-										history.messages[node.data.message.id].favorite = true;
-									} else {
-										history.messages[node.data.message.id].favorite = null;
-									}
-
-									showMessage(node.data.message, true);
-								}}
-								onClose={() => {
-									showControls.set(false);
-								}}
-							/>
-						{/await}
 					{:else}
 						<Controls
 							on:close={() => {

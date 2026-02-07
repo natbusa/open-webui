@@ -33,7 +33,6 @@
 		currentChatPage,
 		temporaryChatEnabled,
 		mobile,
-		showOverview,
 		chatTitle,
 		tools,
 		toolServers,
@@ -611,7 +610,6 @@
 
 			if (!value) {
 				showCallOverlay.set(false);
-				showOverview.set(false);
 			}
 		});
 
@@ -929,7 +927,6 @@
 
 		await showControls.set(false);
 		await showCallOverlay.set(false);
-		await showOverview.set(false);
 
 		if ($page.url.pathname.includes('/c/')) {
 			window.history.replaceState(history.state, '', `/`);

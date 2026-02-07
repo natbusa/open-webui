@@ -63,7 +63,6 @@
 		"@pyscript/core": "^0.4.32",
 		"@sveltejs/adapter-node": "^2.0.0",
 		"@sveltejs/svelte-virtual-list": "^3.0.1",
-		"@xyflow/svelte": "^0.1.19",
 		"alpinejs": "^3.15.0",
 		"async": "^3.2.5",
 		"bits-ui": "^0.21.15",
