@@ -39,8 +39,7 @@
 		toolServers,
 		functions,
 		selectedFolder,
-		pinnedChats,
-		showEmbeds
+		pinnedChats
 	} from '$lib/stores';
 
 	import {
@@ -613,7 +612,6 @@
 			if (!value) {
 				showCallOverlay.set(false);
 				showOverview.set(false);
-				showEmbeds.set(false);
 			}
 		});
 

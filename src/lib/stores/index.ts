@@ -85,11 +85,8 @@ export const showArchivedChats = writable(false);
 export const showChangelog = writable(false);
 
 export const showControls = writable(false);
-export const showEmbeds = writable(false);
 export const showOverview = writable(false);
 export const showCallOverlay = writable(false);
-
-export const embed = writable(null);
 
 export const temporaryChatEnabled = writable(false);
 export const scrollPaginationEnabled = writable(false);

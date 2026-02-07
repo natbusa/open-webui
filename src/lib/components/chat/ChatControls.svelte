@@ -8,15 +8,12 @@
 		mobile,
 		showControls,
 		showCallOverlay,
-		showOverview,
-		showEmbeds
+		showOverview
 	} from '$lib/stores';
 
 	import Controls from './Controls/Controls.svelte';
 	import CallOverlay from './MessageInput/CallOverlay.svelte';
 	import Drawer from '../common/Drawer.svelte';
-	import Embeds from './ChatControls/Embeds.svelte';
-
 	export let history;
 	export let models = [];
 
@@ -136,7 +133,6 @@
 	const closeHandler = () => {
 		showControls.set(false);
 		showOverview.set(false);
-		showEmbeds.set(false);
 
 		if ($showCallOverlay) {
 			showCallOverlay.set(false);
@@ -157,7 +153,7 @@
 			}}
 		>
 			<div
-				class=" {$showCallOverlay || $showOverview || $showEmbeds
+				class=" {$showCallOverlay || $showOverview
 					? ' h-screen  w-full'
 					: 'px-4 py-3'} h-full"
 			>
@@ -177,8 +173,6 @@
 							}}
 						/>
 					</div>
-				{:else if $showEmbeds}
-					<Embeds />
 				{:else if $showOverview}
 					{#await import('./Overview.svelte') then { default: Overview }}
 						<Overview
@@ -246,7 +240,7 @@
 		{#if $showControls}
 			<div class="flex max-h-full min-h-full">
 				<div
-					class="w-full {($showOverview || $showEmbeds) && !$showCallOverlay
+					class="w-full {$showOverview && !$showCallOverlay
 						? ' '
 						: 'px-4 py-3 bg-white dark:shadow-lg dark:bg-gray-850 '} z-40 pointer-events-auto overflow-y-auto scrollbar-hidden"
 					id="controls-container"
@@ -265,8 +259,6 @@
 								}}
 							/>
 						</div>
-					{:else if $showEmbeds}
-						<Embeds overlay={dragged} />
 					{:else if $showOverview}
 						{#await import('./Overview.svelte') then { default: Overview }}
 							<Overview

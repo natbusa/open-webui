@@ -17,8 +17,7 @@
 		theme,
 		user,
 		settings,
-		folders,
-		showEmbeds
+		folders
 	} from '$lib/stores';
 	import { flyAndScale } from '$lib/utils/transitions';
 	import { getChatById } from '$lib/apis/chats';
@@ -317,7 +316,7 @@
 					on:click={async () => {
 						await showControls.set(true);
 						await showOverview.set(false);
-						await showEmbeds.set(false);
+
 					}}
 				>
 					<AdjustmentsHorizontal className=" size-4" strokeWidth="1.5" />
@@ -331,7 +330,6 @@
 				on:click={async () => {
 					await showControls.set(true);
 					await showOverview.set(true);
-					await showEmbeds.set(false);
 				}}
 			>
 				<Map className=" size-4" strokeWidth="1.5" />
