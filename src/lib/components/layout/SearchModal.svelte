@@ -431,7 +431,6 @@
 							bind:messages
 							autoScroll={true}
 							sendMessage={() => {}}
-							continueResponse={() => {}}
 							regenerateResponse={() => {}}
 						/>
 					</div>

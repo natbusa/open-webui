@@ -2091,31 +2091,6 @@
 		}
 	};
 
-	const continueResponse = async () => {
-		console.log('continueResponse');
-		const _chatId = JSON.parse(JSON.stringify($chatId));
-
-		if (history.currentId && history.messages[history.currentId].done == true) {
-			const responseMessage = history.messages[history.currentId];
-			responseMessage.done = false;
-			await tick();
-
-			const model = $models
-				.filter((m) => m.id === (responseMessage?.selectedModelId ?? responseMessage.model))
-				.at(0);
-
-			if (model) {
-				await sendMessageSocket(
-					model,
-					createMessagesList(history, responseMessage.id),
-					history,
-					responseMessage.id,
-					_chatId
-				);
-			}
-		}
-	};
-
 	const mergeResponses = async (messageId, responses, _chatId) => {
 		console.log('mergeResponses', messageId, responses);
 		const message = history.messages[messageId];
@@ -2419,7 +2394,6 @@
 										{sendMessage}
 										{showMessage}
 										{submitMessage}
-										{continueResponse}
 										{regenerateResponse}
 										{mergeResponses}
 										{chatActionHandler}

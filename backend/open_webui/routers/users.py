@@ -202,7 +202,6 @@ class ChatPermissions(BaseModel):
     file_upload: bool = True
     delete: bool = True
     delete_message: bool = True
-    continue_response: bool = True
     regenerate_response: bool = True
     rate_response: bool = True
     edit: bool = True

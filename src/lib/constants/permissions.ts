@@ -31,7 +31,6 @@ export const DEFAULT_PERMISSIONS = {
 		file_upload: true,
 		delete: true,
 		delete_message: true,
-		continue_response: true,
 		regenerate_response: true,
 		rate_response: true,
 		edit: true,

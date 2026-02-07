@@ -41,7 +41,6 @@
 	export let submitMessage: Function;
 	export let deleteMessage: Function;
 
-	export let continueResponse: Function;
 	export let regenerateResponse: Function;
 	export let mergeResponses: Function;
 
@@ -303,7 +302,6 @@
 									{deleteMessage}
 									{actionMessage}
 									{submitMessage}
-									{continueResponse}
 									regenerateResponse={async (message, prompt = null) => {
 										regenerateResponse(message, prompt);
 										await tick();
@@ -359,7 +357,6 @@
 										{deleteMessage}
 										{actionMessage}
 										{submitMessage}
-										{continueResponse}
 										regenerateResponse={async (message, prompt = null) => {
 											regenerateResponse(message, prompt);
 											await tick();

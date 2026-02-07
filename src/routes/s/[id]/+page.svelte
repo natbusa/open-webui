@@ -187,7 +187,6 @@
 							bind:autoScroll
 							bottomPadding={files.length > 0}
 							sendMessage={() => {}}
-							continueResponse={() => {}}
 							regenerateResponse={() => {}}
 						/>
 					</div>

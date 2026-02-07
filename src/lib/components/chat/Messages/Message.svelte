@@ -35,7 +35,6 @@
 	export let submitMessage;
 
 	export let regenerateResponse;
-	export let continueResponse;
 	export let mergeResponses;
 
 	export let addMessages;
@@ -92,7 +91,6 @@
 				{actionMessage}
 				{submitMessage}
 				{deleteMessage}
-				{continueResponse}
 				{regenerateResponse}
 				{addMessages}
 				{readOnly}
@@ -115,7 +113,6 @@
 					{actionMessage}
 					{submitMessage}
 					{deleteMessage}
-					{continueResponse}
 					{regenerateResponse}
 					{mergeResponses}
 					{triggerScroll}

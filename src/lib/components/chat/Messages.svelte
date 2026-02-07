@@ -39,7 +39,6 @@
 	export let setInputText: Function = () => {};
 
 	export let sendMessage: Function;
-	export let continueResponse: Function;
 	export let regenerateResponse: Function;
 	export let mergeResponses: Function;
 
@@ -455,7 +454,6 @@
 								{saveMessage}
 								{submitMessage}
 								{regenerateResponse}
-								{continueResponse}
 								{mergeResponses}
 								{addMessages}
 								{triggerScroll}

@@ -271,7 +271,6 @@
 				messages={chat.chat.messages}
 				autoScroll={true}
 				sendMessage={() => {}}
-				continueResponse={() => {}}
 				regenerateResponse={() => {}}
 				messagesCount={null}
 				editCodeBlock={false}

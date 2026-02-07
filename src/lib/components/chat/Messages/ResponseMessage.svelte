@@ -11,9 +11,8 @@
 
 	const dispatch = createEventDispatcher();
 
-	import { createNewFeedback, getFeedbackById, updateFeedbackById } from '$lib/apis/evaluations';
+	import { createNewFeedback, updateFeedbackById } from '$lib/apis/evaluations';
 	import { getChatById } from '$lib/apis/chats';
-	import { generateTags } from '$lib/apis';
 
 	import {
 		audioQueue,
@@ -43,7 +42,6 @@
 	import Skeleton from './Skeleton.svelte';
 	import Image from '$lib/components/common/Image.svelte';
 	import Tooltip from '$lib/components/common/Tooltip.svelte';
-	import RateComment from './RateComment.svelte';
 	import Spinner from '$lib/components/common/Spinner.svelte';
 	import WebSearchResults from './ResponseMessage/WebSearchResults.svelte';
 	import Sparkles from '$lib/components/icons/Sparkles.svelte';
@@ -129,7 +127,6 @@
 	export let deleteMessage: Function;
 
 	export let submitMessage: Function;
-	export let continueResponse: Function;
 	export let regenerateResponse: Function;
 
 	export let addMessages: Function;
@@ -158,8 +155,6 @@
 	let speakingIdx: number | undefined;
 
 	let loadingSpeech = false;
-
-	let showRateComment = false;
 
 	const copyToClipboard = async (text) => {
 		text = removeAllDetails(text);
@@ -386,8 +381,11 @@
 
 	let feedbackLoading = false;
 
-	const feedbackHandler = async (rating: number | null = null, details: object | null = null) => {
+	const feedbackHandler = async (rating: number | null = null) => {
 		feedbackLoading = true;
+
+		const details = rating === 1 ? { rating: 8 } : rating === -1 ? { rating: 2 } : {};
+
 		console.log('Feedback', rating, details);
 
 		const updatedMessage = {
@@ -395,7 +393,7 @@
 			annotation: {
 				...(message?.annotation ?? {}),
 				...(rating !== null ? { rating: rating } : {}),
-				...(details ? details : {})
+				...details
 			}
 		};
 
@@ -471,35 +469,6 @@
 		saveMessage(message.id, updatedMessage);
 
 		await tick();
-
-		if (!details) {
-			showRateComment = true;
-
-			if (!updatedMessage.annotation?.tags && (message?.content ?? '') !== '') {
-				// attempt to generate tags
-				const tags = await generateTags(localStorage.token, message.model, messages, chatId).catch(
-					(error) => {
-						console.error(error);
-						return [];
-					}
-				);
-				console.log(tags);
-
-				if (tags) {
-					updatedMessage.annotation.tags = tags;
-					feedbackItem.data.tags = tags;
-
-					saveMessage(message.id, updatedMessage);
-					await updateFeedbackById(
-						localStorage.token,
-						updatedMessage.feedbackId,
-						feedbackItem
-					).catch((error) => {
-						toast.error(`${error}`);
-					});
-				}
-			}
-		}
 
 		feedbackLoading = false;
 	};
@@ -1115,22 +1084,17 @@
 													: 'invisible group-hover:visible'} p-1.5 hover:bg-black/5 dark:hover:bg-white/5 rounded-lg {(
 													message?.annotation?.rating ?? ''
 												).toString() === '1'
-													? 'bg-gray-100 dark:bg-gray-800'
+													? 'text-green-500'
 													: ''} dark:hover:text-white hover:text-black transition disabled:cursor-progress disabled:hover:bg-transparent"
 												disabled={feedbackLoading}
 												on:click={async () => {
 													await feedbackHandler(1);
-													window.setTimeout(() => {
-														document
-															.getElementById(`message-feedback-${message.id}`)
-															?.scrollIntoView();
-													}, 0);
 												}}
 											>
 												<svg
 													aria-hidden="true"
 													stroke="currentColor"
-													fill="none"
+													fill={(message?.annotation?.rating ?? '').toString() === '1' ? 'currentColor' : 'none'}
 													stroke-width="2.3"
 													viewBox="0 0 24 24"
 													stroke-linecap="round"
@@ -1153,22 +1117,17 @@
 													: 'invisible group-hover:visible'} p-1.5 hover:bg-black/5 dark:hover:bg-white/5 rounded-lg {(
 													message?.annotation?.rating ?? ''
 												).toString() === '-1'
-													? 'bg-gray-100 dark:bg-gray-800'
+													? 'text-red-500'
 													: ''} dark:hover:text-white hover:text-black transition disabled:cursor-progress disabled:hover:bg-transparent"
 												disabled={feedbackLoading}
 												on:click={async () => {
 													await feedbackHandler(-1);
-													window.setTimeout(() => {
-														document
-															.getElementById(`message-feedback-${message.id}`)
-															?.scrollIntoView();
-													}, 0);
 												}}
 											>
 												<svg
 													aria-hidden="true"
 													stroke="currentColor"
-													fill="none"
+													fill={(message?.annotation?.rating ?? '').toString() === '-1' ? 'currentColor' : 'none'}
 													stroke-width="2.3"
 													viewBox="0 0 24 24"
 													stroke-linecap="round"
@@ -1184,50 +1143,12 @@
 										</Tooltip>
 									{/if}
 
-									{#if isLastMessage && ($user?.role === 'admin' || ($user?.permissions?.chat?.continue_response ?? true))}
-										<Tooltip content={$i18n.t('Continue Response')} placement="bottom">
-											<button
-												aria-label={$i18n.t('Continue Response')}
-												type="button"
-												id="continue-response-button"
-												class="{isLastMessage || ($settings?.highContrastMode ?? false)
-													? 'visible'
-													: 'invisible group-hover:visible'} p-1.5 hover:bg-black/5 dark:hover:bg-white/5 rounded-lg dark:hover:text-white hover:text-black transition"
-												on:click={() => {
-													continueResponse();
-												}}
-											>
-												<svg
-													aria-hidden="true"
-													xmlns="http://www.w3.org/2000/svg"
-													fill="none"
-													viewBox="0 0 24 24"
-													stroke-width="2.3"
-													stroke="currentColor"
-													class="w-4 h-4"
-												>
-													<path
-														stroke-linecap="round"
-														stroke-linejoin="round"
-														d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-													/>
-													<path
-														stroke-linecap="round"
-														stroke-linejoin="round"
-														d="M15.91 11.672a.375.375 0 0 1 0 .656l-5.603 3.113a.375.375 0 0 1-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112Z"
-													/>
-												</svg>
-											</button>
-										</Tooltip>
-									{/if}
-
 									{#if $user?.role === 'admin' || ($user?.permissions?.chat?.regenerate_response ?? true)}
 										{#if $settings?.regenerateMenu ?? true}
 											<button
 												type="button"
 												class="hidden regenerate-response-button"
 												on:click={() => {
-													showRateComment = false;
 													regenerateResponse(message);
 
 													(model?.actions ?? []).forEach((action) => {
@@ -1246,7 +1167,6 @@
 
 											<RegenerateMenu
 												onRegenerate={(prompt = null) => {
-													showRateComment = false;
 													regenerateResponse(message, prompt);
 
 													(model?.actions ?? []).forEach((action) => {
@@ -1296,7 +1216,6 @@
 														? 'visible'
 														: 'invisible group-hover:visible'} p-1.5 hover:bg-black/5 dark:hover:bg-white/5 rounded-lg dark:hover:text-white hover:text-black transition regenerate-response-button"
 													on:click={() => {
-														showRateComment = false;
 														regenerateResponse(message);
 
 														(model?.actions ?? []).forEach((action) => {
@@ -1399,18 +1318,6 @@
 							{/if}
 						{/if}
 					</div>
-
-					{#if message.done && showRateComment}
-						<RateComment
-							bind:message
-							bind:show={showRateComment}
-							on:save={async (e) => {
-								await feedbackHandler(null, {
-									...e.detail
-								});
-							}}
-						/>
-					{/if}
 
 					{#if (isLastMessage || ($settings?.keepFollowUpPrompts ?? false)) && message.done && !readOnly && (message?.followUps ?? []).length > 0}
 						<div class="mt-2.5" in:fade={{ duration: 100 }}>
