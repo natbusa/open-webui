@@ -223,6 +223,73 @@ class LeaderboardResponse(BaseModel):
     entries: list[LeaderboardEntry]
 
 
+class ReviewEntry(BaseModel):
+    model_id: str
+    score: float  # final confidence-weighted score (0-1)
+    total: int  # N
+    positive: int  # thumbs up count
+    negative: int  # thumbs down count
+
+
+class ReviewsResponse(BaseModel):
+    entries: list[ReviewEntry]
+
+
+def _calculate_reviews(feedbacks: list[LeaderboardFeedbackData]) -> list[ReviewEntry]:
+    """
+    Calculate review scores for models using Jeffreys-smoothed positivity
+    with confidence weighting.
+
+    Each feedback with rating="1" counts as positive, rating="-1" as negative.
+    Unlike Elo, this doesn't require pairwise comparisons — works with
+    single-model feedback.
+
+    Formula:
+        smoothed = (pos + 0.5) / (N + 1)
+        final    = (N / (N + k)) * smoothed + (k / (N + k)) * 0.5
+    where k=10.
+    """
+    K = 10
+    model_counts: dict[str, dict] = {}
+
+    for feedback in feedbacks:
+        data = feedback.data or {}
+        model_id = data.get("model_id")
+        rating_value = str(data.get("rating", ""))
+        if not model_id or rating_value not in ("1", "-1"):
+            continue
+
+        if model_id not in model_counts:
+            model_counts[model_id] = {"positive": 0, "negative": 0}
+
+        if rating_value == "1":
+            model_counts[model_id]["positive"] += 1
+        else:
+            model_counts[model_id]["negative"] += 1
+
+    entries = []
+    for model_id, counts in model_counts.items():
+        pos = counts["positive"]
+        neg = counts["negative"]
+        N = pos + neg
+
+        smoothed = (pos + 0.5) / (N + 1)
+        score = (N / (N + K)) * smoothed + (K / (N + K)) * 0.5
+
+        entries.append(
+            ReviewEntry(
+                model_id=model_id,
+                score=round(score, 4),
+                total=N,
+                positive=pos,
+                negative=neg,
+            )
+        )
+
+    entries.sort(key=lambda e: e.score, reverse=True)
+    return entries
+
+
 @router.get("/leaderboard", response_model=LeaderboardResponse)
 async def get_leaderboard(
     query: Optional[str] = None,
@@ -260,6 +327,17 @@ async def get_leaderboard(
     return LeaderboardResponse(entries=entries)
 
 
+@router.get("/reviews", response_model=ReviewsResponse)
+async def get_reviews(
+    user=Depends(get_admin_user),
+    db: Session = Depends(get_session),
+):
+    """Get model reviews ranked by positive/negative feedback with confidence weighting."""
+    feedbacks = Feedbacks.get_feedbacks_for_leaderboard(db=db)
+    entries = _calculate_reviews(feedbacks)
+    return ReviewsResponse(entries=entries)
+
+
 @router.get("/leaderboard/{model_id}/history", response_model=ModelHistoryResponse)
 async def get_model_history(
     model_id: str,
@@ -282,6 +360,7 @@ async def get_model_history(
 @router.get("/config")
 async def get_config(request: Request, user=Depends(get_admin_user)):
     return {
+        "EVALUATION_METHOD": request.app.state.config.EVALUATION_METHOD,
         "ENABLE_EVALUATION_ARENA_MODELS": request.app.state.config.ENABLE_EVALUATION_ARENA_MODELS,
         "EVALUATION_ARENA_MODELS": request.app.state.config.EVALUATION_ARENA_MODELS,
     }
@@ -293,6 +372,7 @@ async def get_config(request: Request, user=Depends(get_admin_user)):
 
 
 class UpdateConfigForm(BaseModel):
+    EVALUATION_METHOD: Optional[str] = None
     ENABLE_EVALUATION_ARENA_MODELS: Optional[bool] = None
     EVALUATION_ARENA_MODELS: Optional[list[dict]] = None
 
@@ -304,11 +384,19 @@ async def update_config(
     user=Depends(get_admin_user),
 ):
     config = request.app.state.config
+    if form_data.EVALUATION_METHOD is not None:
+        if form_data.EVALUATION_METHOD not in ("leaderboard", "reviews", "all"):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="EVALUATION_METHOD must be 'leaderboard', 'reviews', or 'all'",
+            )
+        config.EVALUATION_METHOD = form_data.EVALUATION_METHOD
     if form_data.ENABLE_EVALUATION_ARENA_MODELS is not None:
         config.ENABLE_EVALUATION_ARENA_MODELS = form_data.ENABLE_EVALUATION_ARENA_MODELS
     if form_data.EVALUATION_ARENA_MODELS is not None:
         config.EVALUATION_ARENA_MODELS = form_data.EVALUATION_ARENA_MODELS
     return {
+        "EVALUATION_METHOD": config.EVALUATION_METHOD,
         "ENABLE_EVALUATION_ARENA_MODELS": config.ENABLE_EVALUATION_ARENA_MODELS,
         "EVALUATION_ARENA_MODELS": config.EVALUATION_ARENA_MODELS,
     }

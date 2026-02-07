@@ -3,20 +3,47 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 
+	import { getConfig } from '$lib/apis/evaluations';
+
 	import Leaderboard from './Evaluations/Leaderboard.svelte';
+	import Reviews from './Evaluations/Reviews.svelte';
 	import Feedbacks from './Evaluations/Feedbacks.svelte';
 
 	const i18n = getContext('i18n');
 
+	let evaluationMethod = 'reviews';
 	let selectedTab;
-	$: {
+
+	const validTabs = () => {
+		if (evaluationMethod === 'leaderboard') return ['leaderboard', 'feedback'];
+		if (evaluationMethod === 'reviews') return ['reviews', 'feedback'];
+		return ['leaderboard', 'reviews', 'feedback'];
+	};
+
+	const defaultTab = () => {
+		if (evaluationMethod === 'leaderboard') return 'leaderboard';
+		return 'reviews';
+	};
+
+	const resolveTab = () => {
 		const pathParts = $page.url.pathname.split('/');
 		const tabFromPath = pathParts[pathParts.length - 1];
-		selectedTab = ['leaderboard', 'feedback'].includes(tabFromPath) ? tabFromPath : 'leaderboard';
+		const tabs = validTabs();
+
+		if (tabs.includes(tabFromPath)) {
+			selectedTab = tabFromPath;
+		} else {
+			const fallback = defaultTab();
+			selectedTab = fallback;
+			goto(`/admin/evaluations/${fallback}`, { replaceState: true });
+		}
+	};
+
+	$: if ($page.url.pathname && evaluationMethod) {
+		resolveTab();
 	}
 
 	$: if (selectedTab) {
-		// scroll to selectedTab
 		scrollToTab(selectedTab);
 	}
 
@@ -30,6 +57,15 @@
 	let loaded = false;
 
 	onMount(async () => {
+		try {
+			const config = await getConfig(localStorage.token);
+			if (config?.EVALUATION_METHOD) {
+				evaluationMethod = config.EVALUATION_METHOD;
+			}
+		} catch (err) {
+			console.error('Failed to load evaluation config:', err);
+		}
+
 		loaded = true;
 
 		const containerElement = document.getElementById('users-tabs-container');
@@ -37,13 +73,12 @@
 		if (containerElement) {
 			containerElement.addEventListener('wheel', function (event) {
 				if (event.deltaY !== 0) {
-					// Adjust horizontal scroll position based on vertical scroll
 					containerElement.scrollLeft += event.deltaY;
 				}
 			});
 		}
 
-		// Scroll to the selected tab on mount
+		await tick();
 		scrollToTab(selectedTab);
 	});
 </script>
@@ -54,32 +89,63 @@
 			id="users-tabs-container"
 			class="tabs mx-[16px] lg:mx-0 lg:px-[16px] flex flex-row overflow-x-auto gap-2.5 max-w-full lg:gap-1 lg:flex-col lg:flex-none lg:w-50 dark:text-gray-200 text-sm font-medium text-left scrollbar-none"
 		>
-			<button
-				id="leaderboard"
-				class="px-0.5 py-1 min-w-fit rounded-lg lg:flex-none flex text-right transition {selectedTab ===
-				'leaderboard'
-					? ''
-					: ' text-gray-300 dark:text-gray-600 hover:text-gray-700 dark:hover:text-white'}"
-				on:click={() => {
-					goto('/admin/evaluations/leaderboard');
-				}}
-			>
-				<div class=" self-center mr-2">
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						viewBox="0 0 16 16"
-						fill="currentColor"
-						class="size-4"
-					>
-						<path
-							fill-rule="evenodd"
-							d="M4 2a1.5 1.5 0 0 0-1.5 1.5v9A1.5 1.5 0 0 0 4 14h8a1.5 1.5 0 0 0 1.5-1.5V6.621a1.5 1.5 0 0 0-.44-1.06L9.94 2.439A1.5 1.5 0 0 0 8.878 2H4Zm6 5.75a.75.75 0 0 1 1.5 0v3.5a.75.75 0 0 1-1.5 0v-3.5Zm-2.75 1.5a.75.75 0 0 1 1.5 0v2a.75.75 0 0 1-1.5 0v-2Zm-2 .75a.75.75 0 0 0-.75.75v.5a.75.75 0 0 0 1.5 0v-.5a.75.75 0 0 0-.75-.75Z"
-							clip-rule="evenodd"
-						/>
-					</svg>
-				</div>
-				<div class=" self-center">{$i18n.t('Leaderboard')}</div>
-			</button>
+			{#if evaluationMethod === 'leaderboard' || evaluationMethod === 'all'}
+				<button
+					id="leaderboard"
+					class="px-0.5 py-1 min-w-fit rounded-lg lg:flex-none flex text-right transition {selectedTab ===
+					'leaderboard'
+						? ''
+						: ' text-gray-300 dark:text-gray-600 hover:text-gray-700 dark:hover:text-white'}"
+					on:click={() => {
+						goto('/admin/evaluations/leaderboard');
+					}}
+				>
+					<div class=" self-center mr-2">
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							viewBox="0 0 16 16"
+							fill="currentColor"
+							class="size-4"
+						>
+							<path
+								fill-rule="evenodd"
+								d="M4 2a1.5 1.5 0 0 0-1.5 1.5v9A1.5 1.5 0 0 0 4 14h8a1.5 1.5 0 0 0 1.5-1.5V6.621a1.5 1.5 0 0 0-.44-1.06L9.94 2.439A1.5 1.5 0 0 0 8.878 2H4Zm6 5.75a.75.75 0 0 1 1.5 0v3.5a.75.75 0 0 1-1.5 0v-3.5Zm-2.75 1.5a.75.75 0 0 1 1.5 0v2a.75.75 0 0 1-1.5 0v-2Zm-2 .75a.75.75 0 0 0-.75.75v.5a.75.75 0 0 0 1.5 0v-.5a.75.75 0 0 0-.75-.75Z"
+								clip-rule="evenodd"
+							/>
+						</svg>
+					</div>
+					<div class=" self-center">{$i18n.t('Leaderboard')}</div>
+				</button>
+			{/if}
+
+			{#if evaluationMethod === 'reviews' || evaluationMethod === 'all'}
+				<button
+					id="reviews"
+					class="px-0.5 py-1 min-w-fit rounded-lg lg:flex-none flex text-right transition {selectedTab ===
+					'reviews'
+						? ''
+						: ' text-gray-300 dark:text-gray-600 hover:text-gray-700 dark:hover:text-white'}"
+					on:click={() => {
+						goto('/admin/evaluations/reviews');
+					}}
+				>
+					<div class=" self-center mr-2">
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							viewBox="0 0 16 16"
+							fill="currentColor"
+							class="size-4"
+						>
+							<path
+								fill-rule="evenodd"
+								d="M8 1.75a.75.75 0 0 1 .692.462l1.41 3.393 3.664.293a.75.75 0 0 1 .428 1.317l-2.791 2.39.853 3.574a.75.75 0 0 1-1.12.814L8 11.86l-3.136 1.833a.75.75 0 0 1-1.12-.814l.853-3.574-2.79-2.39a.75.75 0 0 1 .427-1.317l3.664-.293 1.41-3.393A.75.75 0 0 1 8 1.75Z"
+								clip-rule="evenodd"
+							/>
+						</svg>
+					</div>
+					<div class=" self-center">{$i18n.t('Reviews')}</div>
+				</button>
+			{/if}
 
 			<button
 				id="feedback"
@@ -112,6 +178,8 @@
 		<div class="flex-1 mt-1 lg:mt-0 px-[16px] lg:pr-[16px] lg:pl-0 overflow-y-scroll">
 			{#if selectedTab === 'leaderboard'}
 				<Leaderboard />
+			{:else if selectedTab === 'reviews'}
+				<Reviews />
 			{:else if selectedTab === 'feedback'}
 				<Feedbacks />
 			{/if}

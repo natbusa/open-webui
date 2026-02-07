@@ -108,16 +108,31 @@
 
 					<hr class=" border-gray-100/30 dark:border-gray-850/30 my-2" />
 
-					<div class="mb-2.5 flex w-full justify-between">
-						<div class=" text-xs font-medium">{$i18n.t('Arena Models')}</div>
+					<div class="mb-2.5 flex w-full justify-between items-center">
+						<div class=" text-xs font-medium">{$i18n.t('Evaluation Method')}</div>
 
-						<Tooltip content={$i18n.t(`Message rating should be enabled to use this feature`)}>
-							<Switch bind:state={evaluationConfig.ENABLE_EVALUATION_ARENA_MODELS} />
-						</Tooltip>
+						<select
+							class="text-xs bg-transparent outline-none text-right"
+							bind:value={evaluationConfig.EVALUATION_METHOD}
+						>
+							<option value="reviews">{$i18n.t('Reviews')}</option>
+							<option value="leaderboard">{$i18n.t('Leaderboard')}</option>
+							<option value="all">{$i18n.t('All')}</option>
+						</select>
 					</div>
+
+					{#if evaluationConfig.EVALUATION_METHOD === 'leaderboard' || evaluationConfig.EVALUATION_METHOD === 'all'}
+						<div class="mb-2.5 flex w-full justify-between">
+							<div class=" text-xs font-medium">{$i18n.t('Arena Models')}</div>
+
+							<Tooltip content={$i18n.t(`Message rating should be enabled to use this feature`)}>
+								<Switch bind:state={evaluationConfig.ENABLE_EVALUATION_ARENA_MODELS} />
+							</Tooltip>
+						</div>
+					{/if}
 				</div>
 
-				{#if evaluationConfig.ENABLE_EVALUATION_ARENA_MODELS}
+				{#if (evaluationConfig.EVALUATION_METHOD === 'leaderboard' || evaluationConfig.EVALUATION_METHOD === 'all') && evaluationConfig.ENABLE_EVALUATION_ARENA_MODELS}
 					<div class="mb-3">
 						<div class=" mt-0.5 mb-2.5 text-base font-medium flex justify-between items-center">
 							<div>

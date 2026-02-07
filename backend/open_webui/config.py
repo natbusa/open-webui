@@ -1412,6 +1412,12 @@ ENABLE_USER_STATUS = PersistentConfig(
     os.environ.get("ENABLE_USER_STATUS", "True").lower() == "true",
 )
 
+EVALUATION_METHOD = PersistentConfig(
+    "EVALUATION_METHOD",
+    "evaluation.method",
+    os.environ.get("EVALUATION_METHOD", "reviews"),
+)
+
 ENABLE_EVALUATION_ARENA_MODELS = PersistentConfig(
     "ENABLE_EVALUATION_ARENA_MODELS",
     "evaluation.arena.enable",
