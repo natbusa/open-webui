@@ -1,9 +1,9 @@
 <script lang="ts">
-	import type { WorkBook } from 'xlsx';
+	import type { Workbook } from 'exceljs';
 
 	import { getContext, onMount, tick } from 'svelte';
 
-	import { formatFileSize, getLineCount } from '$lib/utils';
+	import { formatFileSize, getLineCount, worksheetToHtml } from '$lib/utils';
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
 	import { getKnowledgeById } from '$lib/apis/knowledge';
 	import { getFileById, getFileContentById } from '$lib/apis/files';
@@ -32,7 +32,7 @@
 	let isExcel = false;
 
 	let selectedTab = '';
-	let excelWorkbook: WorkBook | null = null;
+	let excelWorkbook: Workbook | null = null;
 	let excelSheetNames: string[] = [];
 	let selectedSheet = '';
 	let excelHtml = '';
@@ -92,12 +92,49 @@
 	const loadExcelContent = async () => {
 		try {
 			excelError = '';
-			const [arrayBuffer, { read }] = await Promise.all([
-				getFileContentById(item.id),
-				import('xlsx')
-			]);
-			excelWorkbook = read(arrayBuffer, { type: 'array' });
-			excelSheetNames = excelWorkbook.SheetNames;
+			const fileName = (item?.name ?? '').toLowerCase();
+
+			// .xls (old binary format) is not supported by ExcelJS
+			if (fileName.endsWith('.xls') && !fileName.endsWith('.xlsx')) {
+				excelError = $i18n.t(
+					'The legacy .xls format is not supported for preview. Please convert to .xlsx or download the file.'
+				);
+				return;
+			}
+
+			const arrayBuffer = await getFileContentById(item.id);
+
+			// CSV: parse manually
+			if (
+				fileName.endsWith('.csv') ||
+				item?.meta?.content_type === 'text/csv' ||
+				item?.meta?.content_type === 'application/csv'
+			) {
+				const text = new TextDecoder('utf-8').decode(arrayBuffer);
+				const lines = text.split('\n').filter((line) => line.trim().length > 0);
+				const { escapeHtml } = await import('$lib/utils');
+				const htmlRows = lines.map((line, idx) => {
+					const tag = idx === 0 ? 'th' : 'td';
+					const cells = line
+						.split(',')
+						.map((cell) => `<${tag}>${escapeHtml(cell.trim())}</${tag}>`)
+						.join('');
+					return `<tr>${cells}</tr>`;
+				});
+				excelHtml = `<table id="excel-table">${htmlRows.join('')}</table>`;
+				rowCount = lines.length;
+				excelSheetNames = ['CSV'];
+				selectedSheet = 'CSV';
+				excelWorkbook = null;
+				return;
+			}
+
+			// .xlsx: use ExcelJS
+			const ExcelJS = await import('exceljs');
+			const workbook = new ExcelJS.Workbook();
+			await workbook.xlsx.load(arrayBuffer);
+			excelWorkbook = workbook;
+			excelSheetNames = workbook.worksheets.map((ws) => ws.name);
 
 			if (excelSheetNames.length > 0) {
 				selectedSheet = excelSheetNames[0];
@@ -112,17 +149,11 @@
 	const renderExcelSheet = async () => {
 		if (!excelWorkbook || !selectedSheet) return;
 
-		const worksheet = excelWorkbook.Sheets[selectedSheet];
-		// Calculate row count
-		const XLSX = await import('xlsx');
-		const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1:A1');
-		rowCount = range.e.r - range.s.r + 1;
+		const worksheet = excelWorkbook.getWorksheet(selectedSheet);
+		if (!worksheet) return;
 
-		excelHtml = XLSX.utils.sheet_to_html(worksheet, {
-			id: 'excel-table',
-			editable: false,
-			header: ''
-		});
+		rowCount = worksheet.actualRowCount;
+		excelHtml = worksheetToHtml(worksheet);
 	};
 
 	$: if (selectedSheet && excelWorkbook) {

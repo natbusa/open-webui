@@ -164,6 +164,55 @@ export function unescapeHtml(html: string) {
 	return doc.documentElement.textContent;
 }
 
+export function escapeHtml(text: string): string {
+	const div = document.createElement('div');
+	div.textContent = text;
+	return div.innerHTML;
+}
+
+export function worksheetToHtml(
+	worksheet: import('exceljs').Worksheet,
+	tableId = 'excel-table'
+): string {
+	const rows: string[] = [];
+	let isFirstRow = true;
+
+	worksheet.eachRow((row) => {
+		const cells: string[] = [];
+		const tag = isFirstRow ? 'th' : 'td';
+
+		row.eachCell({ includeEmpty: true }, (cell) => {
+			let value = '';
+			if (cell.value === null || cell.value === undefined) {
+				value = '';
+			} else if (typeof cell.value === 'object') {
+				if (cell.value instanceof Date) {
+					value = cell.value.toLocaleDateString();
+				} else if ('richText' in cell.value) {
+					value = (cell.value as { richText: { text: string }[] }).richText
+						.map((rt) => escapeHtml(String(rt.text)))
+						.join('');
+				} else if ('hyperlink' in cell.value) {
+					const link = cell.value as { hyperlink: string; text?: string };
+					value = escapeHtml(String(link.text ?? link.hyperlink));
+				} else if ('result' in cell.value) {
+					value = escapeHtml(String((cell.value as { result: unknown }).result ?? ''));
+				} else {
+					value = escapeHtml(String(cell.value));
+				}
+			} else {
+				value = escapeHtml(String(cell.value));
+			}
+			cells.push(`<${tag}>${value}</${tag}>`);
+		});
+
+		rows.push(`<tr>${cells.join('')}</tr>`);
+		isFirstRow = false;
+	});
+
+	return `<table id="${escapeHtml(tableId)}">${rows.join('')}</table>`;
+}
+
 export const capitalizeFirstLetter = (string) => {
 	return string.charAt(0).toUpperCase() + string.slice(1);
 };
