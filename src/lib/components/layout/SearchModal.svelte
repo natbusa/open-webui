@@ -227,20 +227,6 @@
 	onMount(() => {
 		actions = [
 			...actions,
-			...(($config?.features?.enable_notes ?? false) &&
-			($user?.role === 'admin' || ($user?.permissions?.features?.notes ?? true))
-				? [
-						{
-							label: $i18n.t('Create a new note'),
-							onClick: async () => {
-								await goto(`/notes?content=${query}`);
-								show = false;
-								onClose();
-							},
-							icon: PageEdit
-						}
-					]
-				: [])
 		];
 
 		document.addEventListener('keydown', onKeyDown);

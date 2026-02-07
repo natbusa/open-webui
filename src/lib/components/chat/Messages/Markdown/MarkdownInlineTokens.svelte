@@ -35,8 +35,7 @@
 			// Check if same origin and an in-app route
 			if (
 				url.origin === window.location.origin &&
-				(url.pathname.startsWith('/notes/') ||
-					url.pathname.startsWith('/c/') ||
+				(url.pathname.startsWith('/c/') ||
 					url.pathname.startsWith('/channels/'))
 			) {
 				e.preventDefault();

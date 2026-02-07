@@ -56,16 +56,12 @@ from open_webui.tools.builtin import (
     replace_memory_content,
     get_current_timestamp,
     calculate_timestamp,
-    search_notes,
     search_chats,
     search_channels,
     search_channel_messages,
-    view_note,
     view_chat,
     view_channel_message,
     view_channel_thread,
-    replace_note_content,
-    write_note,
     list_knowledge_bases,
     search_knowledge_bases,
     query_knowledge_bases,
@@ -449,11 +445,6 @@ def get_builtin_tools(
     ) and get_model_capability("image_generation"):
         builtin_functions.append(edit_image)
 
-    # Notes tools - search, view, create, and update user's notes (if notes enabled globally)
-    if getattr(request.app.state.config, "ENABLE_NOTES", False):
-        builtin_functions.extend(
-            [search_notes, view_note, write_note, replace_note_content]
-        )
 
     # Channels tools - search channels and messages (if channels enabled globally)
     if getattr(request.app.state.config, "ENABLE_CHANNELS", False):
