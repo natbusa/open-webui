@@ -103,7 +103,6 @@ from open_webui.utils.filter import (
     get_sorted_filter_ids,
     process_filter_functions,
 )
-from open_webui.utils.code_interpreter import execute_code_jupyter
 from open_webui.utils.payload import apply_system_prompt_to_body
 from open_webui.utils.mcp.client import MCPClient
 
@@ -112,8 +111,6 @@ from open_webui.config import (
     CACHE_DIR,
     DEFAULT_VOICE_MODE_PROMPT_TEMPLATE,
     DEFAULT_TOOLS_FUNCTION_CALLING_PROMPT_TEMPLATE,
-    DEFAULT_CODE_INTERPRETER_PROMPT,
-    CODE_INTERPRETER_BLOCKED_MODULES,
 )
 from open_webui.env import (
     GLOBAL_LOG_LEVEL,
@@ -143,7 +140,6 @@ DEFAULT_REASONING_TAGS = [
     ("◁think▷", "◁/think▷"),
 ]
 DEFAULT_SOLUTION_TAGS = [("<|begin_of_solution|>", "<|end_of_solution|>")]
-DEFAULT_CODE_INTERPRETER_TAGS = [("<code_interpreter>", "</code_interpreter>")]
 
 
 def get_citation_source_from_tool_result(
@@ -1589,16 +1585,6 @@ async def process_chat_payload(request, form_data, user, metadata, model):
                     request, form_data, extra_params, user
                 )
 
-        if "code_interpreter" in features and features["code_interpreter"]:
-            form_data["messages"] = add_or_update_user_message(
-                (
-                    request.app.state.config.CODE_INTERPRETER_PROMPT_TEMPLATE
-                    if request.app.state.config.CODE_INTERPRETER_PROMPT_TEMPLATE != ""
-                    else DEFAULT_CODE_INTERPRETER_PROMPT
-                ),
-                form_data["messages"],
-            )
-
     tool_ids = form_data.pop("tool_ids", None)
     files = form_data.pop("files", None)
 
@@ -2440,40 +2426,6 @@ async def process_chat_response(
                             else:
                                 content = f'{content}<details type="reasoning" done="false">\n<summary>Thinking…</summary>\n{reasoning_display_content}\n</details>\n'
 
-                    elif block["type"] == "code_interpreter":
-                        attributes = block.get("attributes", {})
-                        output = block.get("output", None)
-                        lang = attributes.get("lang", "")
-
-                        content_stripped, original_whitespace = (
-                            split_content_and_whitespace(content)
-                        )
-                        if is_opening_code_block(content_stripped):
-                            # Remove trailing backticks that would open a new block
-                            content = (
-                                content_stripped.rstrip("`").rstrip()
-                                + original_whitespace
-                            )
-                        else:
-                            # Keep content as is - either closing backticks or no backticks
-                            content = content_stripped + original_whitespace
-
-                        if content and not content.endswith("\n"):
-                            content += "\n"
-
-                        if output:
-                            output = html.escape(json.dumps(output))
-
-                            if raw:
-                                content = f'{content}<code_interpreter type="code" lang="{lang}">\n{block["content"]}\n</code_interpreter>\n```output\n{output}\n```\n'
-                            else:
-                                content = f'{content}<details type="code_interpreter" done="true" output="{output}">\n<summary>Analyzed</summary>\n```{lang}\n{block["content"]}\n```\n</details>\n'
-                        else:
-                            if raw:
-                                content = f'{content}<code_interpreter type="code" lang="{lang}">\n{block["content"]}\n</code_interpreter>\n'
-                            else:
-                                content = f'{content}<details type="code_interpreter" done="false">\n<summary>Analyzing...</summary>\n```{lang}\n{block["content"]}\n```\n</details>\n'
-
                     else:
                         block_content = str(block["content"]).strip()
                         if block_content:
@@ -2642,22 +2594,21 @@ async def process_chat_response(
                             )
 
                             # Reset the content_blocks by appending a new text block
-                            if content_type != "code_interpreter":
-                                if leftover_content:
+                            if leftover_content:
 
-                                    content_blocks.append(
-                                        {
-                                            "type": "text",
-                                            "content": leftover_content,
-                                        }
-                                    )
-                                else:
-                                    content_blocks.append(
-                                        {
-                                            "type": "text",
-                                            "content": "",
-                                        }
-                                    )
+                                content_blocks.append(
+                                    {
+                                        "type": "text",
+                                        "content": leftover_content,
+                                    }
+                                )
+                            else:
+                                content_blocks.append(
+                                    {
+                                        "type": "text",
+                                        "content": "",
+                                    }
+                                )
 
                         else:
                             # Remove the block if content is empty
@@ -2727,10 +2678,6 @@ async def process_chat_response(
 
             reasoning_tags_param = metadata.get("params", {}).get("reasoning_tags")
             DETECT_REASONING_TAGS = reasoning_tags_param is not False
-            DETECT_CODE_INTERPRETER = metadata.get("features", {}).get(
-                "code_interpreter", False
-            )
-
             reasoning_tags = []
             if DETECT_REASONING_TAGS:
                 if (
@@ -3114,15 +3061,6 @@ async def process_chat_response(
                                                 )
                                             )
 
-                                        if DETECT_CODE_INTERPRETER:
-                                            content, content_blocks, end = (
-                                                tag_content_handler(
-                                                    "code_interpreter",
-                                                    DEFAULT_CODE_INTERPRETER_TAGS,
-                                                    content,
-                                                    content_blocks,
-                                                )
-                                            )
 
                                             if end:
                                                 break
@@ -3435,186 +3373,6 @@ async def process_chat_response(
                     except Exception as e:
                         log.debug(e)
                         break
-
-                if DETECT_CODE_INTERPRETER:
-                    MAX_RETRIES = 5
-                    retries = 0
-
-                    while (
-                        content_blocks[-1]["type"] == "code_interpreter"
-                        and retries < MAX_RETRIES
-                    ):
-
-                        await event_emitter(
-                            {
-                                "type": "chat:completion",
-                                "data": {
-                                    "content": serialize_content_blocks(content_blocks),
-                                },
-                            }
-                        )
-
-                        retries += 1
-                        log.debug(f"Attempt count: {retries}")
-
-                        output = ""
-                        try:
-                            if content_blocks[-1]["attributes"].get("type") == "code":
-                                code = content_blocks[-1]["content"]
-                                if CODE_INTERPRETER_BLOCKED_MODULES:
-                                    blocking_code = textwrap.dedent(
-                                        f"""
-                                        import builtins
-
-                                        BLOCKED_MODULES = {CODE_INTERPRETER_BLOCKED_MODULES}
-
-                                        _real_import = builtins.__import__
-                                        def restricted_import(name, globals=None, locals=None, fromlist=(), level=0):
-                                            if name.split('.')[0] in BLOCKED_MODULES:
-                                                importer_name = globals.get('__name__') if globals else None
-                                                if importer_name == '__main__':
-                                                    raise ImportError(
-                                                        f"Direct import of module {{name}} is restricted."
-                                                    )
-                                            return _real_import(name, globals, locals, fromlist, level)
-
-                                        builtins.__import__ = restricted_import
-                                    """
-                                    )
-                                    code = blocking_code + "\n" + code
-
-                                if (
-                                    request.app.state.config.CODE_INTERPRETER_ENGINE
-                                    == "pyodide"
-                                ):
-                                    output = await event_caller(
-                                        {
-                                            "type": "execute:python",
-                                            "data": {
-                                                "id": str(uuid4()),
-                                                "code": code,
-                                                "session_id": metadata.get(
-                                                    "session_id", None
-                                                ),
-                                            },
-                                        }
-                                    )
-                                elif (
-                                    request.app.state.config.CODE_INTERPRETER_ENGINE
-                                    == "jupyter"
-                                ):
-                                    output = await execute_code_jupyter(
-                                        request.app.state.config.CODE_INTERPRETER_JUPYTER_URL,
-                                        code,
-                                        (
-                                            request.app.state.config.CODE_INTERPRETER_JUPYTER_AUTH_TOKEN
-                                            if request.app.state.config.CODE_INTERPRETER_JUPYTER_AUTH
-                                            == "token"
-                                            else None
-                                        ),
-                                        (
-                                            request.app.state.config.CODE_INTERPRETER_JUPYTER_AUTH_PASSWORD
-                                            if request.app.state.config.CODE_INTERPRETER_JUPYTER_AUTH
-                                            == "password"
-                                            else None
-                                        ),
-                                        request.app.state.config.CODE_INTERPRETER_JUPYTER_TIMEOUT,
-                                    )
-                                else:
-                                    output = {
-                                        "stdout": "Code interpreter engine not configured."
-                                    }
-
-                                log.debug(f"Code interpreter output: {output}")
-
-                                if isinstance(output, dict):
-                                    stdout = output.get("stdout", "")
-
-                                    if isinstance(stdout, str):
-                                        stdoutLines = stdout.split("\n")
-                                        for idx, line in enumerate(stdoutLines):
-
-                                            if "data:image/png;base64" in line:
-                                                image_url = get_image_url_from_base64(
-                                                    request,
-                                                    line,
-                                                    metadata,
-                                                    user,
-                                                )
-                                                if image_url:
-                                                    stdoutLines[idx] = (
-                                                        f"![Output Image]({image_url})"
-                                                    )
-
-                                        output["stdout"] = "\n".join(stdoutLines)
-
-                                    result = output.get("result", "")
-
-                                    if isinstance(result, str):
-                                        resultLines = result.split("\n")
-                                        for idx, line in enumerate(resultLines):
-                                            if "data:image/png;base64" in line:
-                                                image_url = get_image_url_from_base64(
-                                                    request,
-                                                    line,
-                                                    metadata,
-                                                    user,
-                                                )
-                                                resultLines[idx] = (
-                                                    f"![Output Image]({image_url})"
-                                                )
-                                        output["result"] = "\n".join(resultLines)
-                        except Exception as e:
-                            output = str(e)
-
-                        content_blocks[-1]["output"] = output
-
-                        content_blocks.append(
-                            {
-                                "type": "text",
-                                "content": "",
-                            }
-                        )
-
-                        await event_emitter(
-                            {
-                                "type": "chat:completion",
-                                "data": {
-                                    "content": serialize_content_blocks(content_blocks),
-                                },
-                            }
-                        )
-
-                        try:
-                            new_form_data = {
-                                **form_data,
-                                "model": model_id,
-                                "stream": True,
-                                "messages": [
-                                    *form_data["messages"],
-                                    {
-                                        "role": "assistant",
-                                        "content": serialize_content_blocks(
-                                            content_blocks, raw=True
-                                        ),
-                                    },
-                                ],
-                            }
-
-                            res = await generate_chat_completion(
-                                request,
-                                new_form_data,
-                                user,
-                                bypass_system_prompt=True,
-                            )
-
-                            if isinstance(res, StreamingResponse):
-                                await stream_body_handler(res, new_form_data)
-                            else:
-                                break
-                        except Exception as e:
-                            log.debug(e)
-                            break
 
                 title = Chats.get_chat_title_by_id(metadata["chat_id"])
                 data = {

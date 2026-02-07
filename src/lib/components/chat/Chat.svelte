@@ -132,8 +132,6 @@
 	let selectedFilterIds = [];
 	let imageGenerationEnabled = false;
 	let webSearchEnabled = false;
-	let codeInterpreterEnabled = false;
-
 	let showCommands = false;
 
 	let generating = false;
@@ -193,8 +191,7 @@
 						selectedFilterIds = input.selectedFilterIds;
 						webSearchEnabled = input.webSearchEnabled;
 						imageGenerationEnabled = input.imageGenerationEnabled;
-						codeInterpreterEnabled = input.codeInterpreterEnabled;
-					}
+						}
 				} catch (e) {}
 			} else {
 				await setDefaults();
@@ -253,7 +250,6 @@
 		selectedFilterIds = [];
 		webSearchEnabled = false;
 		imageGenerationEnabled = false;
-		codeInterpreterEnabled = false;
 
 		if (selectedModelIds.filter((id) => id).length > 0) {
 			setDefaults();
@@ -299,9 +295,6 @@
 					webSearchEnabled = model.info.meta.defaultFeatureIds.includes('web_search');
 				}
 
-				if (model.info?.meta?.capabilities?.['code_interpreter']) {
-					codeInterpreterEnabled = model.info.meta.defaultFeatureIds.includes('code_interpreter');
-				}
 			}
 		}
 	};
@@ -396,30 +389,10 @@
 					chat = await getChatById(localStorage.token, $chatId);
 					allTags.set(await getAllTags(localStorage.token));
 				} else if (type === 'source' || type === 'citation') {
-					if (data?.type === 'code_execution') {
-						// Code execution; update existing code execution by ID, or add new one.
-						if (!message?.code_executions) {
-							message.code_executions = [];
-						}
-
-						const existingCodeExecutionIndex = message.code_executions.findIndex(
-							(execution) => execution.id === data.id
-						);
-
-						if (existingCodeExecutionIndex !== -1) {
-							message.code_executions[existingCodeExecutionIndex] = data;
-						} else {
-							message.code_executions.push(data);
-						}
-
-						message.code_executions = message.code_executions;
+					if (message?.sources) {
+						message.sources.push(data);
 					} else {
-						// Regular source.
-						if (message?.sources) {
-							message.sources.push(data);
-						} else {
-							message.sources = [data];
-						}
+						message.sources = [data];
 					}
 				} else if (type === 'notification') {
 					const toastType = data?.type ?? 'info';
@@ -578,8 +551,7 @@
 			selectedFilterIds = [];
 			webSearchEnabled = false;
 			imageGenerationEnabled = false;
-			codeInterpreterEnabled = false;
-
+	
 			try {
 				const input = JSON.parse(storageChatInput);
 
@@ -590,7 +562,6 @@
 					selectedFilterIds = input.selectedFilterIds;
 					webSearchEnabled = input.webSearchEnabled;
 					imageGenerationEnabled = input.imageGenerationEnabled;
-					codeInterpreterEnabled = input.codeInterpreterEnabled;
 				}
 			} catch (e) {}
 		}
@@ -960,10 +931,6 @@
 
 		if ($page.url.searchParams.get('image-generation') === 'true') {
 			imageGenerationEnabled = true;
-		}
-
-		if ($page.url.searchParams.get('code-interpreter') === 'true') {
-			codeInterpreterEnabled = true;
 		}
 
 		if ($page.url.searchParams.get('tools')) {
@@ -1737,11 +1704,6 @@
 					($user?.role === 'admin' || $user?.permissions?.features?.image_generation)
 						? imageGenerationEnabled
 						: false,
-				code_interpreter:
-					$config?.features?.enable_code_interpreter &&
-					($user?.role === 'admin' || $user?.permissions?.features?.code_interpreter)
-						? codeInterpreterEnabled
-						: false,
 				web_search:
 					$config?.features?.enable_web_search &&
 					($user?.role === 'admin' || $user?.permissions?.features?.web_search)
@@ -2481,8 +2443,7 @@
 									bind:selectedToolIds
 									bind:selectedFilterIds
 									bind:imageGenerationEnabled
-									bind:codeInterpreterEnabled
-									bind:webSearchEnabled
+										bind:webSearchEnabled
 									bind:atSelectedModel
 									bind:showCommands
 									toolServers={$toolServers}
@@ -2523,8 +2484,7 @@
 									bind:selectedToolIds
 									bind:selectedFilterIds
 									bind:imageGenerationEnabled
-									bind:codeInterpreterEnabled
-									bind:webSearchEnabled
+										bind:webSearchEnabled
 									bind:atSelectedModel
 									bind:showCommands
 									toolServers={$toolServers}
