@@ -12,7 +12,6 @@
 	import Spinner from '$lib/components/common/Spinner.svelte';
 	import Modal from '$lib/components/common/Modal.svelte';
 	import XMark from '$lib/components/icons/XMark.svelte';
-	import EmojiPicker from '$lib/components/common/EmojiPicker.svelte';
 	import FaceSmile from '$lib/components/icons/FaceSmile.svelte';
 	import Emoji from '$lib/components/common/Emoji.svelte';
 
@@ -103,21 +102,13 @@
 						<div
 							class="flex items-center px-2.5 py-2 gap-3 border border-gray-100/50 dark:border-gray-850/50 rounded-xl"
 						>
-							<EmojiPicker
-								onClose={() => {}}
-								onSubmit={(name) => {
-									console.log(name);
-									emoji = name;
-								}}
-							>
-								<div class=" flex items-center">
-									{#if emoji}
-										<Emoji shortCode={emoji} />
-									{:else}
-										<FaceSmile />
-									{/if}
-								</div>
-							</EmojiPicker>
+							<div class=" flex items-center">
+								{#if emoji}
+									<Emoji shortCode={emoji} />
+								{:else}
+									<FaceSmile />
+								{/if}
+							</div>
 
 							<input
 								id="status-message"

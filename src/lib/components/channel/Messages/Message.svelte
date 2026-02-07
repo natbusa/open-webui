@@ -31,8 +31,8 @@
 	import FileItem from '$lib/components/common/FileItem.svelte';
 	import ProfilePreview from './Message/ProfilePreview.svelte';
 	import ChatBubbleOvalEllipsis from '$lib/components/icons/ChatBubble.svelte';
-	import FaceSmile from '$lib/components/icons/FaceSmile.svelte';
-	import EmojiPicker from '$lib/components/common/EmojiPicker.svelte';
+
+
 	import ChevronRight from '$lib/components/icons/ChevronRight.svelte';
 	import Emoji from '$lib/components/common/Emoji.svelte';
 	import Skeleton from '$lib/components/chat/Messages/Skeleton.svelte';
@@ -113,27 +113,6 @@
 				<div
 					class="flex gap-1 rounded-lg bg-white dark:bg-gray-850 shadow-md p-0.5 border border-gray-100/30 dark:border-gray-850/30"
 				>
-					{#if onReaction}
-						<EmojiPicker
-							onClose={() => (showButtons = false)}
-							onSubmit={(name) => {
-								showButtons = false;
-								onReaction(name);
-							}}
-						>
-							<Tooltip content={$i18n.t('Add Reaction')}>
-								<button
-									class="hover:bg-gray-100 dark:hover:bg-gray-800 transition rounded-lg p-1"
-									on:click={() => {
-										showButtons = true;
-									}}
-								>
-									<FaceSmile />
-								</button>
-							</Tooltip>
-						</EmojiPicker>
-					{/if}
-
 					{#if onReply}
 						<Tooltip content={$i18n.t('Reply')}>
 							<button
@@ -492,21 +471,6 @@
 									</Tooltip>
 								{/each}
 
-								{#if onReaction}
-									<EmojiPicker
-										onSubmit={(name) => {
-											onReaction(name);
-										}}
-									>
-										<Tooltip content={$i18n.t('Add Reaction')}>
-											<div
-												class="flex items-center gap-1.5 bg-gray-500/10 hover:outline hover:outline-gray-700/30 dark:hover:outline-gray-300/30 hover:outline-1 transition rounded-xl px-1 py-1 cursor-pointer text-gray-500 dark:text-gray-400"
-											>
-												<FaceSmile />
-											</div>
-										</Tooltip>
-									</EmojiPicker>
-								{/if}
 							</div>
 						</div>
 					{/if}
