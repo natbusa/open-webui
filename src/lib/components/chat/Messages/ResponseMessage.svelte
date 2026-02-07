@@ -384,16 +384,13 @@
 	const feedbackHandler = async (rating: number | null = null) => {
 		feedbackLoading = true;
 
-		const details = rating === 1 ? { rating: 8 } : rating === -1 ? { rating: 2 } : {};
-
-		console.log('Feedback', rating, details);
+		console.log('Feedback', rating);
 
 		const updatedMessage = {
 			...message,
 			annotation: {
 				...(message?.annotation ?? {}),
-				...(rating !== null ? { rating: rating } : {}),
-				...details
+				...(rating !== null ? { rating: rating } : {})
 			}
 		};
 
