@@ -1060,25 +1060,6 @@ ENABLE_BASE_MODELS_CACHE = PersistentConfig(
 
 
 ####################################
-# TOOL_SERVERS
-####################################
-
-try:
-    tool_server_connections = json.loads(
-        os.environ.get("TOOL_SERVER_CONNECTIONS", "[]")
-    )
-except Exception as e:
-    log.exception(f"Error loading TOOL_SERVER_CONNECTIONS: {e}")
-    tool_server_connections = []
-
-
-TOOL_SERVER_CONNECTIONS = PersistentConfig(
-    "TOOL_SERVER_CONNECTIONS",
-    "tool_server.connections",
-    tool_server_connections,
-)
-
-####################################
 # WEBUI
 ####################################
 
@@ -1202,24 +1183,9 @@ RESPONSE_WATERMARK = PersistentConfig(
 )
 
 
-USER_PERMISSIONS_WORKSPACE_MODELS_ACCESS = (
-    os.environ.get("USER_PERMISSIONS_WORKSPACE_MODELS_ACCESS", "False").lower()
-    == "true"
-)
+USER_PERMISSIONS_WORKSPACE_MODELS_ACCESS = True
 
-USER_PERMISSIONS_WORKSPACE_KNOWLEDGE_ACCESS = (
-    os.environ.get("USER_PERMISSIONS_WORKSPACE_KNOWLEDGE_ACCESS", "False").lower()
-    == "true"
-)
-
-USER_PERMISSIONS_WORKSPACE_PROMPTS_ACCESS = (
-    os.environ.get("USER_PERMISSIONS_WORKSPACE_PROMPTS_ACCESS", "False").lower()
-    == "true"
-)
-
-USER_PERMISSIONS_WORKSPACE_TOOLS_ACCESS = (
-    os.environ.get("USER_PERMISSIONS_WORKSPACE_TOOLS_ACCESS", "False").lower() == "true"
-)
+USER_PERMISSIONS_WORKSPACE_KNOWLEDGE_ACCESS = True
 
 USER_PERMISSIONS_WORKSPACE_MODELS_IMPORT = (
     os.environ.get("USER_PERMISSIONS_WORKSPACE_MODELS_IMPORT", "False").lower()
@@ -1229,24 +1195,6 @@ USER_PERMISSIONS_WORKSPACE_MODELS_IMPORT = (
 USER_PERMISSIONS_WORKSPACE_MODELS_EXPORT = (
     os.environ.get("USER_PERMISSIONS_WORKSPACE_MODELS_EXPORT", "False").lower()
     == "true"
-)
-
-USER_PERMISSIONS_WORKSPACE_PROMPTS_IMPORT = (
-    os.environ.get("USER_PERMISSIONS_WORKSPACE_PROMPTS_IMPORT", "False").lower()
-    == "true"
-)
-
-USER_PERMISSIONS_WORKSPACE_PROMPTS_EXPORT = (
-    os.environ.get("USER_PERMISSIONS_WORKSPACE_PROMPTS_EXPORT", "False").lower()
-    == "true"
-)
-
-USER_PERMISSIONS_WORKSPACE_TOOLS_IMPORT = (
-    os.environ.get("USER_PERMISSIONS_WORKSPACE_TOOLS_IMPORT", "False").lower() == "true"
-)
-
-USER_PERMISSIONS_WORKSPACE_TOOLS_EXPORT = (
-    os.environ.get("USER_PERMISSIONS_WORKSPACE_TOOLS_EXPORT", "False").lower() == "true"
 )
 
 
@@ -1272,31 +1220,6 @@ USER_PERMISSIONS_WORKSPACE_KNOWLEDGE_ALLOW_SHARING = (
 USER_PERMISSIONS_WORKSPACE_KNOWLEDGE_ALLOW_PUBLIC_SHARING = (
     os.environ.get(
         "USER_PERMISSIONS_WORKSPACE_KNOWLEDGE_ALLOW_PUBLIC_SHARING", "False"
-    ).lower()
-    == "true"
-)
-
-USER_PERMISSIONS_WORKSPACE_PROMPTS_ALLOW_SHARING = (
-    os.environ.get("USER_PERMISSIONS_WORKSPACE_PROMPTS_ALLOW_SHARING", "False").lower()
-    == "true"
-)
-
-USER_PERMISSIONS_WORKSPACE_PROMPTS_ALLOW_PUBLIC_SHARING = (
-    os.environ.get(
-        "USER_PERMISSIONS_WORKSPACE_PROMPTS_ALLOW_PUBLIC_SHARING", "False"
-    ).lower()
-    == "true"
-)
-
-
-USER_PERMISSIONS_WORKSPACE_TOOLS_ALLOW_SHARING = (
-    os.environ.get("USER_PERMISSIONS_WORKSPACE_TOOLS_ALLOW_SHARING", "False").lower()
-    == "true"
-)
-
-USER_PERMISSIONS_WORKSPACE_TOOLS_ALLOW_PUBLIC_SHARING = (
-    os.environ.get(
-        "USER_PERMISSIONS_WORKSPACE_TOOLS_ALLOW_PUBLIC_SHARING", "False"
     ).lower()
     == "true"
 )
@@ -1378,11 +1301,6 @@ USER_PERMISSIONS_CHAT_TEMPORARY_ENFORCED = (
 )
 
 
-USER_PERMISSIONS_FEATURES_DIRECT_TOOL_SERVERS = (
-    os.environ.get("USER_PERMISSIONS_FEATURES_DIRECT_TOOL_SERVERS", "False").lower()
-    == "true"
-)
-
 USER_PERMISSIONS_FEATURES_WEB_SEARCH = (
     os.environ.get("USER_PERMISSIONS_FEATURES_WEB_SEARCH", "True").lower() == "true"
 )
@@ -1419,24 +1337,14 @@ DEFAULT_USER_PERMISSIONS = {
     "workspace": {
         "models": USER_PERMISSIONS_WORKSPACE_MODELS_ACCESS,
         "knowledge": USER_PERMISSIONS_WORKSPACE_KNOWLEDGE_ACCESS,
-        "prompts": USER_PERMISSIONS_WORKSPACE_PROMPTS_ACCESS,
-        "tools": USER_PERMISSIONS_WORKSPACE_TOOLS_ACCESS,
         "models_import": USER_PERMISSIONS_WORKSPACE_MODELS_IMPORT,
         "models_export": USER_PERMISSIONS_WORKSPACE_MODELS_EXPORT,
-        "prompts_import": USER_PERMISSIONS_WORKSPACE_PROMPTS_IMPORT,
-        "prompts_export": USER_PERMISSIONS_WORKSPACE_PROMPTS_EXPORT,
-        "tools_import": USER_PERMISSIONS_WORKSPACE_TOOLS_IMPORT,
-        "tools_export": USER_PERMISSIONS_WORKSPACE_TOOLS_EXPORT,
     },
     "sharing": {
         "models": USER_PERMISSIONS_WORKSPACE_MODELS_ALLOW_SHARING,
         "public_models": USER_PERMISSIONS_WORKSPACE_MODELS_ALLOW_PUBLIC_SHARING,
         "knowledge": USER_PERMISSIONS_WORKSPACE_KNOWLEDGE_ALLOW_SHARING,
         "public_knowledge": USER_PERMISSIONS_WORKSPACE_KNOWLEDGE_ALLOW_PUBLIC_SHARING,
-        "prompts": USER_PERMISSIONS_WORKSPACE_PROMPTS_ALLOW_SHARING,
-        "public_prompts": USER_PERMISSIONS_WORKSPACE_PROMPTS_ALLOW_PUBLIC_SHARING,
-        "tools": USER_PERMISSIONS_WORKSPACE_TOOLS_ALLOW_SHARING,
-        "public_tools": USER_PERMISSIONS_WORKSPACE_TOOLS_ALLOW_PUBLIC_SHARING,
     },
     "chat": {
         "controls": USER_PERMISSIONS_CHAT_CONTROLS,
@@ -1463,7 +1371,6 @@ DEFAULT_USER_PERMISSIONS = {
         "api_keys": USER_PERMISSIONS_FEATURES_API_KEYS,
         "folders": USER_PERMISSIONS_FEATURES_FOLDERS,
         "channels": USER_PERMISSIONS_FEATURES_CHANNELS,
-        "direct_tool_servers": USER_PERMISSIONS_FEATURES_DIRECT_TOOL_SERVERS,
         # Chat features
         "web_search": USER_PERMISSIONS_FEATURES_WEB_SEARCH,
         "image_generation": USER_PERMISSIONS_FEATURES_IMAGE_GENERATION,

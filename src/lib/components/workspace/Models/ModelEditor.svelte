@@ -2,16 +2,14 @@
 	import { toast } from 'svelte-sonner';
 
 	import { onMount, getContext, tick } from 'svelte';
-	import { models, tools, functions, user } from '$lib/stores';
+	import { models, functions, user } from '$lib/stores';
 	import { WEBUI_BASE_URL } from '$lib/constants';
 
-	import { getTools } from '$lib/apis/tools';
 	import { getFunctions } from '$lib/apis/functions';
 
 	import AdvancedParams from '$lib/components/chat/Settings/Advanced/AdvancedParams.svelte';
 	import Tags from '$lib/components/common/Tags.svelte';
 	import Knowledge from '$lib/components/workspace/Models/Knowledge.svelte';
-	import ToolsSelector from '$lib/components/workspace/Models/ToolsSelector.svelte';
 	import FiltersSelector from '$lib/components/workspace/Models/FiltersSelector.svelte';
 	import ActionsSelector from '$lib/components/workspace/Models/ActionsSelector.svelte';
 	import Capabilities from '$lib/components/workspace/Models/Capabilities.svelte';
@@ -86,7 +84,6 @@
 	};
 
 	let knowledge = [];
-	let toolIds = [];
 
 	let filterIds = [];
 	let defaultFilterIds = [];
@@ -154,14 +151,6 @@
 			}
 		}
 
-		if (toolIds.length > 0) {
-			info.meta.toolIds = toolIds;
-		} else {
-			if (info.meta.toolIds) {
-				delete info.meta.toolIds;
-			}
-		}
-
 		if (filterIds.length > 0) {
 			info.meta.filterIds = filterIds;
 		} else {
@@ -221,7 +210,6 @@
 	};
 
 	onMount(async () => {
-		await tools.set(await getTools(localStorage.token));
 		await functions.set(await getFunctions(localStorage.token));
 
 		// Scroll to top 'workspace-container' element
@@ -280,7 +268,6 @@
 				}
 			});
 
-			toolIds = model?.meta?.toolIds ?? [];
 			filterIds = model?.meta?.filterIds ?? [];
 			defaultFilterIds = model?.meta?.defaultFilterIds ?? [];
 			actionIds = model?.meta?.actionIds ?? [];
@@ -714,10 +701,6 @@
 
 					<div class="my-2">
 						<Knowledge bind:selectedItems={knowledge} />
-					</div>
-
-					<div class="my-2">
-						<ToolsSelector bind:selectedToolIds={toolIds} tools={$tools ?? []} />
 					</div>
 
 					{#if ($functions ?? []).filter((func) => func.type === 'filter').length > 0 || ($functions ?? []).filter((func) => func.type === 'action').length > 0}

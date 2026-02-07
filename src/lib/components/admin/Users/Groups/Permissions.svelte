@@ -33,11 +33,6 @@
 </script>
 
 <div class="space-y-2">
-	<!-- {$i18n.t('Default Model')}
-	{$i18n.t('Model Filtering')}
-	{$i18n.t('Model Permissions')}
-	{$i18n.t('No model IDs')} -->
-
 	<div>
 		<div class=" mb-2 text-sm font-medium">{$i18n.t('Workspace Permissions')}</div>
 
@@ -46,31 +41,23 @@
 				<div class=" self-center text-xs font-medium">
 					{$i18n.t('Models Access')}
 				</div>
-				<Switch bind:state={permissions.workspace.models} />
+				<div class="text-xs text-gray-500">{$i18n.t('Always enabled')}</div>
 			</div>
 
-			{#if permissions.workspace.models}
-				<div class="ml-2 flex flex-col gap-2 pt-0.5 pb-1">
-					<div class="flex w-full justify-between">
-						<div class="self-center text-xs">
-							{$i18n.t('Import Models')}
-						</div>
-						<Switch bind:state={permissions.workspace.models_import} />
+			<div class="ml-2 flex flex-col gap-2 pt-0.5 pb-1">
+				<div class="flex w-full justify-between">
+					<div class="self-center text-xs">
+						{$i18n.t('Import Models')}
 					</div>
-					<div class="flex w-full justify-between">
-						<div class="self-center text-xs">
-							{$i18n.t('Export Models')}
-						</div>
-						<Switch bind:state={permissions.workspace.models_export} />
-					</div>
+					<Switch bind:state={permissions.workspace.models_import} />
 				</div>
-			{:else if defaultPermissions?.workspace?.models}
-				<div class="pb-0.5">
-					<div class="text-xs text-gray-500">
-						{$i18n.t('This is a default user permission and will remain enabled.')}
+				<div class="flex w-full justify-between">
+					<div class="self-center text-xs">
+						{$i18n.t('Export Models')}
 					</div>
+					<Switch bind:state={permissions.workspace.models_export} />
 				</div>
-			{/if}
+			</div>
 		</div>
 
 		<div class="flex flex-col w-full">
@@ -78,85 +65,8 @@
 				<div class=" self-center text-xs font-medium">
 					{$i18n.t('Knowledge Access')}
 				</div>
-				<Switch bind:state={permissions.workspace.knowledge} />
+				<div class="text-xs text-gray-500">{$i18n.t('Always enabled')}</div>
 			</div>
-			{#if defaultPermissions?.workspace?.knowledge && !permissions.workspace.knowledge}
-				<div>
-					<div class="text-xs text-gray-500">
-						{$i18n.t('This is a default user permission and will remain enabled.')}
-					</div>
-				</div>
-			{/if}
-		</div>
-
-		<div class="flex flex-col w-full">
-			<div class="flex w-full justify-between my-1">
-				<div class=" self-center text-xs font-medium">
-					{$i18n.t('Prompts Access')}
-				</div>
-				<Switch bind:state={permissions.workspace.prompts} />
-			</div>
-
-			{#if permissions.workspace.prompts}
-				<div class="ml-2 flex flex-col gap-2 pt-0.5 pb-1">
-					<div class="flex w-full justify-between">
-						<div class="self-center text-xs">
-							{$i18n.t('Import Prompts')}
-						</div>
-						<Switch bind:state={permissions.workspace.prompts_import} />
-					</div>
-					<div class="flex w-full justify-between">
-						<div class="self-center text-xs">
-							{$i18n.t('Export Prompts')}
-						</div>
-						<Switch bind:state={permissions.workspace.prompts_export} />
-					</div>
-				</div>
-			{:else if defaultPermissions?.workspace?.prompts}
-				<div class="pb-0.5">
-					<div class="text-xs text-gray-500">
-						{$i18n.t('This is a default user permission and will remain enabled.')}
-					</div>
-				</div>
-			{/if}
-		</div>
-
-		<div class="flex flex-col w-full">
-			<Tooltip
-				className="flex w-full justify-between my-1"
-				content={$i18n.t(
-					'Warning: Enabling this will allow users to upload arbitrary code on the server.'
-				)}
-				placement="top-start"
-			>
-				<div class=" self-center text-xs font-medium">
-					{$i18n.t('Tools Access')}
-				</div>
-				<Switch bind:state={permissions.workspace.tools} />
-			</Tooltip>
-
-			{#if permissions.workspace.tools}
-				<div class="ml-2 flex flex-col gap-2 pt-0.5 pb-1">
-					<div class="flex w-full justify-between">
-						<div class="self-center text-xs">
-							{$i18n.t('Import Tools')}
-						</div>
-						<Switch bind:state={permissions.workspace.tools_import} />
-					</div>
-					<div class="flex w-full justify-between">
-						<div class="self-center text-xs">
-							{$i18n.t('Export Tools')}
-						</div>
-						<Switch bind:state={permissions.workspace.tools_export} />
-					</div>
-				</div>
-			{:else if defaultPermissions?.workspace?.tools}
-				<div class="pb-0.5">
-					<div class="text-xs text-gray-500">
-						{$i18n.t('This is a default user permission and will remain enabled.')}
-					</div>
-				</div>
-			{/if}
 		</div>
 	</div>
 
@@ -224,74 +134,6 @@
 					<Switch bind:state={permissions.sharing.public_knowledge} />
 				</div>
 				{#if defaultPermissions?.sharing?.public_knowledge && !permissions.sharing.public_knowledge}
-					<div>
-						<div class="text-xs text-gray-500">
-							{$i18n.t('This is a default user permission and will remain enabled.')}
-						</div>
-					</div>
-				{/if}
-			</div>
-		{/if}
-
-		<div class="flex flex-col w-full">
-			<div class="flex w-full justify-between my-1">
-				<div class=" self-center text-xs font-medium">
-					{$i18n.t('Prompts Sharing')}
-				</div>
-				<Switch bind:state={permissions.sharing.prompts} />
-			</div>
-			{#if defaultPermissions?.sharing?.prompts && !permissions.sharing.prompts}
-				<div>
-					<div class="text-xs text-gray-500">
-						{$i18n.t('This is a default user permission and will remain enabled.')}
-					</div>
-				</div>
-			{/if}
-		</div>
-
-		{#if permissions.sharing.prompts}
-			<div class="flex flex-col w-full">
-				<div class="flex w-full justify-between my-1">
-					<div class=" self-center text-xs font-medium">
-						{$i18n.t('Prompts Public Sharing')}
-					</div>
-					<Switch bind:state={permissions.sharing.public_prompts} />
-				</div>
-				{#if defaultPermissions?.sharing?.public_prompts && !permissions.sharing.public_prompts}
-					<div>
-						<div class="text-xs text-gray-500">
-							{$i18n.t('This is a default user permission and will remain enabled.')}
-						</div>
-					</div>
-				{/if}
-			</div>
-		{/if}
-
-		<div class="flex flex-col w-full">
-			<div class="flex w-full justify-between my-1">
-				<div class=" self-center text-xs font-medium">
-					{$i18n.t('Tools Sharing')}
-				</div>
-				<Switch bind:state={permissions.sharing.tools} />
-			</div>
-			{#if defaultPermissions?.sharing?.tools && !permissions.sharing.tools}
-				<div>
-					<div class="text-xs text-gray-500">
-						{$i18n.t('This is a default user permission and will remain enabled.')}
-					</div>
-				</div>
-			{/if}
-		</div>
-
-		{#if permissions.sharing.tools}
-			<div class="flex flex-col w-full">
-				<div class="flex w-full justify-between my-1">
-					<div class=" self-center text-xs font-medium">
-						{$i18n.t('Tools Public Sharing')}
-					</div>
-					<Switch bind:state={permissions.sharing.public_tools} />
-				</div>
-				{#if defaultPermissions?.sharing?.public_tools && !permissions.sharing.public_tools}
 					<div>
 						<div class="text-xs text-gray-500">
 							{$i18n.t('This is a default user permission and will remain enabled.')}
@@ -648,22 +490,6 @@
 				<Switch bind:state={permissions.features.folders} />
 			</div>
 			{#if defaultPermissions?.features?.folders && !permissions.features.folders}
-				<div>
-					<div class="text-xs text-gray-500">
-						{$i18n.t('This is a default user permission and will remain enabled.')}
-					</div>
-				</div>
-			{/if}
-		</div>
-
-		<div class="flex flex-col w-full">
-			<div class="flex w-full justify-between my-1">
-				<div class=" self-center text-xs font-medium">
-					{$i18n.t('Direct Tool Servers')}
-				</div>
-				<Switch bind:state={permissions.features.direct_tool_servers} />
-			</div>
-			{#if defaultPermissions?.features?.direct_tool_servers && !permissions.features.direct_tool_servers}
 				<div>
 					<div class="text-xs text-gray-500">
 						{$i18n.t('This is a default user permission and will remain enabled.')}

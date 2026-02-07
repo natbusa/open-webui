@@ -508,45 +508,11 @@ class OAuthClientManager:
 
     def ensure_client_from_config(self, client_id):
         """
-        Lazy-load an OAuth client from the current TOOL_SERVER_CONNECTIONS
-        config if it hasn't been registered on this node yet.
+        Return the existing OAuth client for *client_id* if it has already
+        been registered, otherwise return None.
         """
         if client_id in self.clients:
             return self.clients[client_id]["client"]
-
-        try:
-            connections = getattr(self.app.state.config, "TOOL_SERVER_CONNECTIONS", [])
-        except Exception:
-            connections = []
-
-        for connection in connections or []:
-            if connection.get("type", "openapi") != "mcp":
-                continue
-            if connection.get("auth_type", "none") != "oauth_2.1":
-                continue
-
-            server_id = connection.get("info", {}).get("id")
-            if not server_id:
-                continue
-
-            expected_client_id = f"mcp:{server_id}"
-            if client_id != expected_client_id:
-                continue
-
-            oauth_client_info = connection.get("info", {}).get("oauth_client_info", "")
-            if not oauth_client_info:
-                continue
-
-            try:
-                oauth_client_info = decrypt_data(oauth_client_info)
-                return self.add_client(
-                    expected_client_id, OAuthClientInformationFull(**oauth_client_info)
-                )["client"]
-            except Exception as e:
-                log.error(
-                    f"Failed to lazily add OAuth client {expected_client_id} from config: {e}"
-                )
-                continue
 
         return None
 

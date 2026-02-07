@@ -86,9 +86,7 @@ from open_webui.routers import (
     memories,
     models,
     knowledge,
-    prompts,
     evaluations,
-    tools,
     users,
     utils,
     scim,
@@ -126,8 +124,6 @@ from open_webui.config import (
     ENABLE_BASE_MODELS_CACHE,
     # Thread pool size for FastAPI/AnyIO
     THREAD_POOL_SIZE,
-    # Tool Server Configs
-    TOOL_SERVER_CONNECTIONS,
     ENABLE_MEMORIES,
     # Image
     AUTOMATIC1111_API_AUTH,
@@ -695,15 +691,6 @@ app.state.config.OPENAI_API_KEYS = OPENAI_API_KEYS
 app.state.config.OPENAI_API_CONFIGS = OPENAI_API_CONFIGS
 
 app.state.OPENAI_MODELS = {}
-
-########################################
-#
-# TOOL SERVERS
-#
-########################################
-
-app.state.config.TOOL_SERVER_CONNECTIONS = TOOL_SERVER_CONNECTIONS
-app.state.TOOL_SERVERS = []
 
 ########################################
 #
@@ -1374,8 +1361,6 @@ app.include_router(chats.router, prefix="/api/v1/chats", tags=["chats"])
 
 app.include_router(models.router, prefix="/api/v1/models", tags=["models"])
 app.include_router(knowledge.router, prefix="/api/v1/knowledge", tags=["knowledge"])
-app.include_router(prompts.router, prefix="/api/v1/prompts", tags=["prompts"])
-app.include_router(tools.router, prefix="/api/v1/tools", tags=["tools"])
 
 app.include_router(memories.router, prefix="/api/v1/memories", tags=["memories"])
 app.include_router(folders.router, prefix="/api/v1/folders", tags=["folders"])
@@ -1589,7 +1574,6 @@ async def chat_completion(
             "session_id": form_data.pop("session_id", None),
             "filter_ids": form_data.pop("filter_ids", []),
             "tool_ids": form_data.get("tool_ids", None),
-            "tool_servers": form_data.pop("tool_servers", None),
             "files": form_data.get("files", None),
             "features": form_data.get("features", {}),
             "variables": form_data.get("variables", {}),
@@ -2072,30 +2056,6 @@ async def get_current_usage(user=Depends(get_verified_user)):
 ############################
 
 
-# Initialize OAuth client manager with any MCP tool servers using OAuth 2.1
-if len(app.state.config.TOOL_SERVER_CONNECTIONS) > 0:
-    for tool_server_connection in app.state.config.TOOL_SERVER_CONNECTIONS:
-        if tool_server_connection.get("type", "openapi") == "mcp":
-            server_id = tool_server_connection.get("info", {}).get("id")
-            auth_type = tool_server_connection.get("auth_type", "none")
-
-            if server_id and auth_type == "oauth_2.1":
-                oauth_client_info = tool_server_connection.get("info", {}).get(
-                    "oauth_client_info", ""
-                )
-
-                try:
-                    oauth_client_info = decrypt_data(oauth_client_info)
-                    app.state.oauth_client_manager.add_client(
-                        f"mcp:{server_id}",
-                        OAuthClientInformationFull(**oauth_client_info),
-                    )
-                except Exception as e:
-                    log.error(
-                        f"Error adding OAuth client for MCP tool server {server_id}: {e}"
-                    )
-                    pass
-
 try:
     if ENABLE_STAR_SESSIONS_MIDDLEWARE:
         redis_session_store = RedisStore(
@@ -2124,64 +2084,6 @@ except Exception as e:
     )
 
 
-async def register_client(request, client_id: str) -> bool:
-    server_type, server_id = client_id.split(":", 1)
-
-    connection = None
-    connection_idx = None
-
-    for idx, conn in enumerate(request.app.state.config.TOOL_SERVER_CONNECTIONS or []):
-        if conn.get("type", "openapi") == server_type:
-            info = conn.get("info", {})
-            if info.get("id") == server_id:
-                connection = conn
-                connection_idx = idx
-                break
-
-    if connection is None or connection_idx is None:
-        log.warning(
-            f"Unable to locate MCP tool server configuration for client {client_id} during re-registration"
-        )
-        return False
-
-    server_url = connection.get("url")
-    oauth_server_key = (connection.get("config") or {}).get("oauth_server_key")
-
-    try:
-        oauth_client_info = (
-            await get_oauth_client_info_with_dynamic_client_registration(
-                request,
-                client_id,
-                server_url,
-                oauth_server_key,
-            )
-        )
-    except Exception as e:
-        log.error(f"Dynamic client re-registration failed for {client_id}: {e}")
-        return False
-
-    try:
-        request.app.state.config.TOOL_SERVER_CONNECTIONS[connection_idx] = {
-            **connection,
-            "info": {
-                **connection.get("info", {}),
-                "oauth_client_info": encrypt_data(
-                    oauth_client_info.model_dump(mode="json")
-                ),
-            },
-        }
-    except Exception as e:
-        log.error(
-            f"Failed to persist updated OAuth client info for tool server {client_id}: {e}"
-        )
-        return False
-
-    oauth_client_manager.remove_client(client_id)
-    oauth_client_manager.add_client(client_id, oauth_client_info)
-    log.info(f"Re-registered OAuth client {client_id} for tool server")
-    return True
-
-
 @app.get("/oauth/clients/{client_id}/authorize")
 async def oauth_client_authorize(
     client_id: str,
@@ -2196,33 +2098,10 @@ async def oauth_client_authorize(
         raise HTTPException(status.HTTP_404_NOT_FOUND)
 
     if not await oauth_client_manager._preflight_authorization_url(client, client_info):
-        log.info(
-            "Detected invalid OAuth client %s; attempting re-registration",
-            client_id,
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="OAuth client registration is invalid",
         )
-
-        registered = await register_client(request, client_id)
-        if not registered:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to re-register OAuth client",
-            )
-
-        client = oauth_client_manager.get_client(client_id)
-        client_info = oauth_client_manager.get_client_info(client_id)
-        if client is None or client_info is None:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="OAuth client unavailable after re-registration",
-            )
-
-        if not await oauth_client_manager._preflight_authorization_url(
-            client, client_info
-        ):
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="OAuth client registration is still invalid after re-registration",
-            )
 
     return await oauth_client_manager.handle_authorize(request, client_id=client_id)
 

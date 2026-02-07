@@ -169,16 +169,10 @@ async def get_user_permissisions(
 # User Default Permissions
 ############################
 class WorkspacePermissions(BaseModel):
-    models: bool = False
-    knowledge: bool = False
-    prompts: bool = False
-    tools: bool = False
+    models: bool = True
+    knowledge: bool = True
     models_import: bool = False
     models_export: bool = False
-    prompts_import: bool = False
-    prompts_export: bool = False
-    tools_import: bool = False
-    tools_export: bool = False
 
 
 class SharingPermissions(BaseModel):
@@ -186,10 +180,6 @@ class SharingPermissions(BaseModel):
     public_models: bool = False
     knowledge: bool = False
     public_knowledge: bool = False
-    prompts: bool = False
-    public_prompts: bool = False
-    tools: bool = False
-    public_tools: bool = True
     notes: bool = False
     public_notes: bool = True
 
@@ -220,7 +210,6 @@ class FeaturesPermissions(BaseModel):
     notes: bool = True
     channels: bool = True
     folders: bool = True
-    direct_tool_servers: bool = False
 
     web_search: bool = True
     image_generation: bool = True

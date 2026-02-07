@@ -34,8 +34,6 @@
 		temporaryChatEnabled,
 		mobile,
 		chatTitle,
-		tools,
-		toolServers,
 		functions,
 		selectedFolder,
 		pinnedChats
@@ -74,7 +72,6 @@
 		stopTask,
 		getTaskIdsByChatId
 	} from '$lib/apis';
-	import { getTools } from '$lib/apis/tools';
 	import { uploadFile } from '$lib/apis/files';
 	import { createOpenAITextStream } from '$lib/apis/streaming';
 	import { getFunctions } from '$lib/apis/functions';
@@ -128,7 +125,6 @@
 		selectedModelIds = selectedModels;
 	}
 
-	let selectedToolIds = [];
 	let selectedFilterIds = [];
 	let imageGenerationEnabled = false;
 	let webSearchEnabled = false;
@@ -164,7 +160,6 @@
 		messageInput?.setText('');
 
 		files = [];
-		selectedToolIds = [];
 		selectedFilterIds = [];
 		webSearchEnabled = false;
 		imageGenerationEnabled = false;
@@ -187,7 +182,6 @@
 					if (!$temporaryChatEnabled) {
 						messageInput?.setText(input.prompt);
 						files = input.files;
-						selectedToolIds = input.selectedToolIds;
 						selectedFilterIds = input.selectedFilterIds;
 						webSearchEnabled = input.webSearchEnabled;
 						imageGenerationEnabled = input.imageGenerationEnabled;
@@ -246,7 +240,6 @@
 	};
 
 	const resetInput = () => {
-		selectedToolIds = [];
 		selectedFilterIds = [];
 		webSearchEnabled = false;
 		imageGenerationEnabled = false;
@@ -257,9 +250,6 @@
 	};
 
 	const setDefaults = async () => {
-		if (!$tools) {
-			tools.set(await getTools(localStorage.token));
-		}
 		if (!$functions) {
 			functions.set(await getFunctions(localStorage.token));
 		}
@@ -269,15 +259,6 @@
 
 		const model = atSelectedModel ?? $models.find((m) => m.id === selectedModels[0]);
 		if (model) {
-			// Set Default Tools
-			if (model?.info?.meta?.toolIds) {
-				selectedToolIds = [
-					...new Set(
-						[...(model?.info?.meta?.toolIds ?? [])].filter((id) => $tools.find((t) => t.id === id))
-					)
-				];
-			}
-
 			// Set Default Filters (Toggleable only)
 			if (model?.info?.meta?.defaultFilterIds) {
 				selectedFilterIds = model.info.meta.defaultFilterIds.filter((id) =>
@@ -547,18 +528,16 @@
 			messageInput?.setText('');
 
 			files = [];
-			selectedToolIds = [];
 			selectedFilterIds = [];
 			webSearchEnabled = false;
 			imageGenerationEnabled = false;
-	
+
 			try {
 				const input = JSON.parse(storageChatInput);
 
 				if (!$temporaryChatEnabled) {
 					messageInput?.setText(input.prompt);
 					files = input.files;
-					selectedToolIds = input.selectedToolIds;
 					selectedFilterIds = input.selectedFilterIds;
 					webSearchEnabled = input.webSearchEnabled;
 					imageGenerationEnabled = input.imageGenerationEnabled;
@@ -931,20 +910,6 @@
 
 		if ($page.url.searchParams.get('image-generation') === 'true') {
 			imageGenerationEnabled = true;
-		}
-
-		if ($page.url.searchParams.get('tools')) {
-			selectedToolIds = $page.url.searchParams
-				.get('tools')
-				?.split(',')
-				.map((id) => id.trim())
-				.filter((id) => id);
-		} else if ($page.url.searchParams.get('tool-ids')) {
-			selectedToolIds = $page.url.searchParams
-				.get('tool-ids')
-				?.split(',')
-				.map((id) => id.trim())
-				.filter((id) => id);
 		}
 
 		if ($page.url.searchParams.get('call') === 'true') {
@@ -1824,23 +1789,6 @@
 			})
 			.filter((message) => message?.role === 'user' || message?.content?.trim());
 
-		const toolIds = [];
-		const toolServerIds = [];
-
-		for (const toolId of selectedToolIds) {
-			if (toolId.startsWith('direct_server:')) {
-				let serverId = toolId.replace('direct_server:', '');
-				// Check if serverId is a number
-				if (!isNaN(parseInt(serverId))) {
-					toolServerIds.push(parseInt(serverId));
-				} else {
-					toolServerIds.push(serverId);
-				}
-			} else {
-				toolIds.push(toolId);
-			}
-		}
-
 		const res = await generateOpenAIChatCompletion(
 			localStorage.token,
 			{
@@ -1861,10 +1809,6 @@
 				files: (files?.length ?? 0) > 0 ? files : undefined,
 
 				filter_ids: selectedFilterIds.length > 0 ? selectedFilterIds : undefined,
-				tool_ids: toolIds.length > 0 ? toolIds : undefined,
-				tool_servers: ($toolServers ?? []).filter(
-					(server, idx) => toolServerIds.includes(idx) || toolServerIds.includes(server?.id)
-				),
 				features: getFeatures(),
 				variables: {
 					...getPromptVariables($user?.name, $settings?.userLocation ? userLocation : undefined)
@@ -2414,13 +2358,13 @@
 									bind:files
 									bind:prompt
 									bind:autoScroll
-									bind:selectedToolIds
+	
 									bind:selectedFilterIds
 									bind:imageGenerationEnabled
 										bind:webSearchEnabled
 									bind:atSelectedModel
 									bind:showCommands
-									toolServers={$toolServers}
+	
 									{generating}
 									{stopResponse}
 									{createMessagePair}
@@ -2455,13 +2399,13 @@
 									bind:files
 									bind:prompt
 									bind:autoScroll
-									bind:selectedToolIds
+	
 									bind:selectedFilterIds
 									bind:imageGenerationEnabled
 										bind:webSearchEnabled
 									bind:atSelectedModel
 									bind:showCommands
-									toolServers={$toolServers}
+	
 									{stopResponse}
 									{createMessagePair}
 									{onSelect}

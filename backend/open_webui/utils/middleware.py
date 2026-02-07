@@ -24,7 +24,6 @@ from fastapi.responses import HTMLResponse
 from starlette.responses import Response, StreamingResponse, JSONResponse
 
 
-from open_webui.utils.misc import is_string_allowed
 from open_webui.models.oauth_sessions import OAuthSessions
 from open_webui.models.chats import Chats
 from open_webui.models.folders import Folders
@@ -94,9 +93,7 @@ from open_webui.utils.misc import (
     get_content_from_message,
 )
 from open_webui.utils.tools import (
-    get_tools,
     get_updated_tool_function,
-    has_tool_server_access,
 )
 from open_webui.utils.plugin import load_function_module_by_id
 from open_webui.utils.filter import (
@@ -104,9 +101,6 @@ from open_webui.utils.filter import (
     process_filter_functions,
 )
 from open_webui.utils.payload import apply_system_prompt_to_body
-from open_webui.utils.mcp.client import MCPClient
-
-
 from open_webui.config import (
     CACHE_DIR,
     DEFAULT_VOICE_MODE_PROMPT_TEMPLATE,
@@ -1585,7 +1579,7 @@ async def process_chat_payload(request, form_data, user, metadata, model):
                     request, form_data, extra_params, user
                 )
 
-    tool_ids = form_data.pop("tool_ids", None)
+    form_data.pop("tool_ids", None)
     files = form_data.pop("files", None)
 
     prompt = get_last_user_message(form_data["messages"])
@@ -1614,182 +1608,11 @@ async def process_chat_payload(request, form_data, user, metadata, model):
 
     metadata = {
         **metadata,
-        "tool_ids": tool_ids,
         "files": files,
     }
     form_data["metadata"] = metadata
 
-    # Server side tools
-    tool_ids = metadata.get("tool_ids", None)
-    # Client side tools
-    direct_tool_servers = metadata.get("tool_servers", None)
-
-    log.debug(f"{tool_ids=}")
-    log.debug(f"{direct_tool_servers=}")
-
     tools_dict = {}
-
-    mcp_clients = {}
-    mcp_tools_dict = {}
-
-    if tool_ids:
-        for tool_id in tool_ids:
-            if tool_id.startswith("server:mcp:"):
-                try:
-                    server_id = tool_id[len("server:mcp:") :]
-
-                    mcp_server_connection = None
-                    for (
-                        server_connection
-                    ) in request.app.state.config.TOOL_SERVER_CONNECTIONS:
-                        if (
-                            server_connection.get("type", "") == "mcp"
-                            and server_connection.get("info", {}).get("id") == server_id
-                        ):
-                            mcp_server_connection = server_connection
-                            break
-
-                    if not mcp_server_connection:
-                        log.error(f"MCP server with id {server_id} not found")
-                        continue
-
-                    # Check access control for MCP server
-                    if not has_tool_server_access(user, mcp_server_connection):
-                        log.warning(
-                            f"Access denied to MCP server {server_id} for user {user.id}"
-                        )
-                        continue
-
-                    auth_type = mcp_server_connection.get("auth_type", "")
-                    headers = {}
-                    if auth_type == "bearer":
-                        headers["Authorization"] = (
-                            f"Bearer {mcp_server_connection.get('key', '')}"
-                        )
-                    elif auth_type == "none":
-                        # No authentication
-                        pass
-                    elif auth_type == "session":
-                        headers["Authorization"] = (
-                            f"Bearer {request.state.token.credentials}"
-                        )
-                    elif auth_type == "system_oauth":
-                        oauth_token = extra_params.get("__oauth_token__", None)
-                        if oauth_token:
-                            headers["Authorization"] = (
-                                f"Bearer {oauth_token.get('access_token', '')}"
-                            )
-                    elif auth_type == "oauth_2.1":
-                        try:
-                            splits = server_id.split(":")
-                            server_id = splits[-1] if len(splits) > 1 else server_id
-
-                            oauth_token = await request.app.state.oauth_client_manager.get_oauth_token(
-                                user.id, f"mcp:{server_id}"
-                            )
-
-                            if oauth_token:
-                                headers["Authorization"] = (
-                                    f"Bearer {oauth_token.get('access_token', '')}"
-                                )
-                        except Exception as e:
-                            log.error(f"Error getting OAuth token: {e}")
-                            oauth_token = None
-
-                    connection_headers = mcp_server_connection.get("headers", None)
-                    if connection_headers and isinstance(connection_headers, dict):
-                        for key, value in connection_headers.items():
-                            headers[key] = value
-
-                    mcp_clients[server_id] = MCPClient()
-                    await mcp_clients[server_id].connect(
-                        url=mcp_server_connection.get("url", ""),
-                        headers=headers if headers else None,
-                    )
-
-                    function_name_filter_list = mcp_server_connection.get(
-                        "config", {}
-                    ).get("function_name_filter_list", "")
-
-                    if isinstance(function_name_filter_list, str):
-                        function_name_filter_list = function_name_filter_list.split(",")
-
-                    tool_specs = await mcp_clients[server_id].list_tool_specs()
-                    for tool_spec in tool_specs:
-
-                        def make_tool_function(client, function_name):
-                            async def tool_function(**kwargs):
-                                return await client.call_tool(
-                                    function_name,
-                                    function_args=kwargs,
-                                )
-
-                            return tool_function
-
-                        if function_name_filter_list:
-                            if not is_string_allowed(
-                                tool_spec["name"], function_name_filter_list
-                            ):
-                                # Skip this function
-                                continue
-
-                        tool_function = make_tool_function(
-                            mcp_clients[server_id], tool_spec["name"]
-                        )
-
-                        mcp_tools_dict[f"{server_id}_{tool_spec['name']}"] = {
-                            "spec": {
-                                **tool_spec,
-                                "name": f"{server_id}_{tool_spec['name']}",
-                            },
-                            "callable": tool_function,
-                            "type": "mcp",
-                            "client": mcp_clients[server_id],
-                            "direct": False,
-                        }
-                except Exception as e:
-                    log.debug(e)
-                    if event_emitter:
-                        await event_emitter(
-                            {
-                                "type": "chat:message:error",
-                                "data": {
-                                    "error": {
-                                        "content": f"Failed to connect to MCP server '{server_id}'"
-                                    }
-                                },
-                            }
-                        )
-                    continue
-
-        tools_dict = await get_tools(
-            request,
-            tool_ids,
-            user,
-            {
-                **extra_params,
-                "__model__": models[task_model_id],
-                "__messages__": form_data["messages"],
-                "__files__": metadata.get("files", []),
-            },
-        )
-
-        if mcp_tools_dict:
-            tools_dict = {**tools_dict, **mcp_tools_dict}
-
-    if direct_tool_servers:
-        for tool_server in direct_tool_servers:
-            tool_specs = tool_server.pop("specs", [])
-
-            for tool in tool_specs:
-                tools_dict[tool["name"]] = {
-                    "spec": tool,
-                    "direct": True,
-                    "server": tool_server,
-                }
-
-    if mcp_clients:
-        metadata["mcp_clients"] = mcp_clients
 
     # Inject builtin tools for native function calling based on enabled features and model capability
     # Check if builtin_tools capability is enabled for this model (defaults to True if not specified)

@@ -26,8 +26,6 @@
 		models,
 		config,
 		showCallOverlay,
-		tools,
-		toolServers,
 		user as _user,
 		showControls,
 		TTSWorker,
@@ -51,14 +49,11 @@
 	import { uploadFile } from '$lib/apis/files';
 	import { deleteFileById } from '$lib/apis/files';
 	import { getSessionUser } from '$lib/apis/auths';
-	import { getTools } from '$lib/apis/tools';
-
 	import { WEBUI_BASE_URL, WEBUI_API_BASE_URL, PASTED_TEXT_CHARACTER_LIMIT } from '$lib/constants';
 
 	import InputMenu from './MessageInput/InputMenu.svelte';
 	import VoiceRecording from './MessageInput/VoiceRecording.svelte';
 	import FilesOverlay from './MessageInput/FilesOverlay.svelte';
-	import ToolServersModal from './ToolServersModal.svelte';
 
 	import ChatTextarea from '../common/ChatTextarea.svelte';
 	import Tooltip from '../common/Tooltip.svelte';
@@ -68,7 +63,6 @@
 	import XMark from '../icons/XMark.svelte';
 	import GlobeAlt from '../icons/GlobeAlt.svelte';
 	import Photo from '../icons/Photo.svelte';
-	import Wrench from '../icons/Wrench.svelte';
 	import Sparkles from '../icons/Sparkles.svelte';
 
 	import InputVariablesModal from './MessageInput/InputVariablesModal.svelte';
@@ -108,7 +102,6 @@
 	export let prompt = '';
 	export let files = [];
 
-	export let selectedToolIds = [];
 	export let selectedFilterIds = [];
 
 	export let imageGenerationEnabled = false;
@@ -119,7 +112,7 @@
 	let inputVariableValues = {};
 
 	let showValvesModal = false;
-	let selectedValvesType = 'tool'; // 'tool' or 'function'
+	let selectedValvesType = 'function';
 	let selectedValvesItemId = null;
 	let integrationsMenuCloseOnOutsideClick = true;
 
@@ -138,7 +131,6 @@
 					access_control: undefined
 				};
 			}),
-		selectedToolIds,
 		selectedFilterIds,
 		imageGenerationEnabled,
 		webSearchEnabled
@@ -365,8 +357,7 @@
 
 	let command = '';
 	export let showCommands = false;
-	$: showCommands = ['/', '#', '@'].includes(command?.charAt(0)) || '\\#' === command?.slice(0, 2);
-	let showTools = false;
+	$: showCommands = ['#', '@'].includes(command?.charAt(0)) || '\\#' === command?.slice(0, 2);
 
 	let loaded = false;
 	let recording = false;
@@ -414,9 +405,6 @@
 	$: toggleFilters = (atSelectedModel?.id ? [atSelectedModel.id] : selectedModels)
 		.map((id) => ($models.find((model) => model.id === id) || {})?.filters ?? [])
 		.reduce((acc, filters) => acc.filter((f1) => filters.some((f2) => f2.id === f1.id)));
-
-	let showToolsButton = false;
-	$: showToolsButton = ($tools ?? []).length > 0 || ($toolServers ?? []).length > 0;
 
 	let showWebSearchButton = false;
 	$: showWebSearchButton =
@@ -774,8 +762,6 @@
 		dropzoneElement?.addEventListener('dragover', onDragOver);
 		dropzoneElement?.addEventListener('drop', onDrop);
 		dropzoneElement?.addEventListener('dragleave', onDragLeave);
-
-		await tools.set(await getTools(localStorage.token));
 	});
 
 	onDestroy(() => {
@@ -797,7 +783,6 @@
 </script>
 
 <FilesOverlay show={dragged} />
-<ToolServersModal bind:show={showTools} {selectedToolIds} />
 
 <InputVariablesModal
 	bind:show={showInputVariablesModal}
@@ -1147,7 +1132,6 @@
 										if (e.key === 'Escape') {
 											console.log('Escape');
 											atSelectedModel = undefined;
-											selectedToolIds = [];
 											selectedFilterIds = [];
 
 											webSearchEnabled = false;
@@ -1256,7 +1240,7 @@
 										</div>
 									</InputMenu>
 
-									{#if showWebSearchButton || showImageGenerationButton || showToolsButton || (toggleFilters && toggleFilters.length > 0)}
+									{#if showWebSearchButton || showImageGenerationButton || (toggleFilters && toggleFilters.length > 0)}
 										<div
 											class="flex self-center w-[1px] h-4 mx-1 bg-gray-200/50 dark:bg-gray-800/50"
 										/>
@@ -1266,18 +1250,10 @@
 											{toggleFilters}
 											{showWebSearchButton}
 											{showImageGenerationButton}
-											bind:selectedToolIds
 											bind:selectedFilterIds
 											bind:webSearchEnabled
 											bind:imageGenerationEnabled
 											closeOnOutsideClick={integrationsMenuCloseOnOutsideClick}
-											onShowValves={(e) => {
-												const { type, id } = e;
-												selectedValvesType = type;
-												selectedValvesItemId = id;
-												showValvesModal = true;
-												integrationsMenuCloseOnOutsideClick = false;
-											}}
 											onClose={async () => {
 												await tick();
 
@@ -1314,29 +1290,6 @@
 									{/if}
 
 									<div class="ml-1 flex gap-1.5">
-										{#if (selectedToolIds ?? []).length > 0}
-											<Tooltip
-												content={$i18n.t('{{COUNT}} Available Tools', {
-													COUNT: selectedToolIds.length
-												})}
-											>
-												<button
-													class="translate-y-[0.5px] px-1 flex gap-1 items-center text-gray-600 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-200 rounded-lg self-center transition"
-													aria-label="Available Tools"
-													type="button"
-													on:click={() => {
-														showTools = !showTools;
-													}}
-												>
-													<Wrench className="size-4" strokeWidth="1.75" />
-
-													<span class="text-sm">
-														{selectedToolIds.length}
-													</span>
-												</button>
-											</Tooltip>
-										{/if}
-
 										{#each selectedFilterIds as filterId}
 											{@const filter = toggleFilters.find((f) => f.id === filterId)}
 											{#if filter}

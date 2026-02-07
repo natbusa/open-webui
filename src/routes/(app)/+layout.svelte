@@ -9,8 +9,7 @@
 	import { page } from '$app/stores';
 	import { fade } from 'svelte/transition';
 
-	import { getModels, getToolServersData, getVersionUpdates } from '$lib/apis';
-	import { getTools } from '$lib/apis/tools';
+	import { getModels, getVersionUpdates } from '$lib/apis';
 	import { getBanners } from '$lib/apis/configs';
 	import { getUserSettings } from '$lib/apis/users';
 
@@ -22,9 +21,7 @@
 		user,
 		settings,
 		models,
-		prompts,
 		knowledge,
-		tools,
 		functions,
 		tags,
 		banners,
@@ -32,7 +29,6 @@
 		showShortcuts,
 		showChangelog,
 		temporaryChatEnabled,
-		toolServers,
 		showSearch,
 		showSidebar
 	} from '$lib/stores';
@@ -115,30 +111,9 @@
 		);
 	};
 
-	const setToolServers = async () => {
-		let toolServersData = await getToolServersData($settings?.toolServers ?? []);
-		toolServersData = toolServersData.filter((data) => {
-			if (!data || data.error) {
-				toast.error(
-					$i18n.t(`Failed to connect to {{URL}} OpenAPI tool server`, {
-						URL: data?.url
-					})
-				);
-				return false;
-			}
-			return true;
-		});
-		toolServers.set(toolServersData);
-	};
-
 	const setBanners = async () => {
 		const bannersData = await getBanners(localStorage.token);
 		banners.set(bannersData);
-	};
-
-	const setTools = async () => {
-		const toolsData = await getTools(localStorage.token);
-		tools.set(toolsData);
 	};
 
 	onMount(async () => {
@@ -154,9 +129,8 @@
 		await Promise.all([
 			checkLocalDBChats(),
 			setBanners(),
-			setTools(),
 			setUserSettings(async () => {
-				await Promise.all([setModels(), setToolServers()]);
+				await Promise.all([setModels()]);
 			})
 		]);
 
