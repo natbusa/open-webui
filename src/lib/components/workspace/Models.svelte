@@ -1,8 +1,5 @@
 <script lang="ts">
-	import { marked } from 'marked';
-
 	import { toast } from 'svelte-sonner';
-	import Sortable from 'sortablejs';
 
 	import fileSaver from 'file-saver';
 	const { saveAs } = fileSaver;
@@ -11,14 +8,12 @@
 	import { goto } from '$app/navigation';
 	const i18n = getContext('i18n');
 
-	import { WEBUI_NAME, config, mobile, models as _models, settings, user } from '$lib/stores';
-	import { WEBUI_API_BASE_URL, WEBUI_BASE_URL } from '$lib/constants';
+	import { WEBUI_NAME, config, models as _models, settings, user } from '$lib/stores';
 	import {
 		createNewModel,
 		deleteModelById,
 		getModelItems as getWorkspaceModels,
 		getModelTags,
-		toggleModelById,
 		updateModelById
 	} from '$lib/apis/models';
 
@@ -26,25 +21,18 @@
 	import { getGroups } from '$lib/apis/groups';
 	import { updateUserSettings } from '$lib/apis/users';
 
-	import { capitalizeFirstLetter, copyToClipboard } from '$lib/utils';
+	import { copyToClipboard } from '$lib/utils';
 
-	import EllipsisHorizontal from '../icons/EllipsisHorizontal.svelte';
-	import ModelMenu from './Models/ModelMenu.svelte';
+	import ModelCard from './Models/ModelCard.svelte';
 	import ModelDeleteConfirmDialog from '../common/ConfirmDialog.svelte';
-	import Tooltip from '../common/Tooltip.svelte';
-	import GarbageBin from '../icons/GarbageBin.svelte';
 	import Search from '../icons/Search.svelte';
 	import Plus from '../icons/Plus.svelte';
 	import ChevronRight from '../icons/ChevronRight.svelte';
-	import Switch from '../common/Switch.svelte';
 	import Spinner from '../common/Spinner.svelte';
 	import XMark from '../icons/XMark.svelte';
-	import EyeSlash from '../icons/EyeSlash.svelte';
-	import Eye from '../icons/Eye.svelte';
 	import ViewSelector from './common/ViewSelector.svelte';
 	import TagSelector from './common/TagSelector.svelte';
 	import Pagination from '../common/Pagination.svelte';
-	import Badge from '$lib/components/common/Badge.svelte';
 
 	let shiftKey = false;
 
@@ -70,6 +58,13 @@
 	let models = null;
 	let total = null;
 
+	let baseModels = [];
+	let baseTotal = 0;
+	let starModels = [];
+	let starTotal = 0;
+
+	const hasTag = (m, tagName) => (m.meta?.tags ?? []).some((t) => t.name === tagName);
+
 	let searchDebounceTimer;
 
 	$: if (
@@ -83,6 +78,22 @@
 			getModelList();
 		}, 300);
 	}
+
+	const getFixedLists = async () => {
+		try {
+			const [baseRes, starRes] = await Promise.all([
+				getWorkspaceModels(localStorage.token, '', '', 'base', null, null, 1),
+				getWorkspaceModels(localStorage.token, '', '', 'star', null, null, 1)
+			]);
+			baseModels = baseRes?.items ?? [];
+			baseTotal = baseRes?.total ?? 0;
+			const rawStar = starRes?.items ?? [];
+			starModels = rawStar.filter((m) => !hasTag(m, 'base'));
+			starTotal = starModels.length;
+		} catch (err) {
+			console.error(err);
+		}
+	};
 
 	const getModelList = async () => {
 		try {
@@ -100,14 +111,19 @@
 			});
 
 			if (res) {
-				models = res.items;
-				total = res.total;
+				models = res.items.filter((m) => !hasTag(m, 'base') && !hasTag(m, 'star'));
+				if (!selectedTag) {
+					total = res.total - baseTotal - starTotal;
+				} else {
+					total = res.total;
+				}
 
 				// get tags
 				tags = await getModelTags(localStorage.token).catch((error) => {
 					toast.error(`${error}`);
 					return [];
 				});
+				tags = tags.filter((tag) => tag !== 'base' && tag !== 'star');
 			}
 		} catch (err) {
 			console.error(err);
@@ -124,6 +140,7 @@
 			toast.success($i18n.t(`Deleted {{name}}`, { name: model.id }));
 
 			page = 1;
+			getFixedLists();
 			getModelList();
 		}
 
@@ -181,6 +198,7 @@
 			);
 
 			page = 1;
+			getFixedLists();
 			getModelList();
 		}
 
@@ -236,6 +254,8 @@
 
 		let groups = await getGroups(localStorage.token);
 		groupIds = groups.map((group) => group.id);
+
+		getFixedLists();
 
 		loaded = true;
 
@@ -334,6 +354,7 @@
 					);
 
 					page = 1;
+					getFixedLists();
 					getModelList();
 				};
 
@@ -388,6 +409,64 @@
 			</div>
 		</div>
 	</div>
+
+	{#if baseModels.length > 0}
+		<div class="py-2 bg-white dark:bg-gray-900 rounded-3xl border border-gray-100/30 dark:border-gray-850/30 mb-3">
+			<div class="px-4 py-2">
+				<div class="text-sm font-medium text-gray-500 dark:text-gray-400">
+					{$i18n.t('Base Models')}
+				</div>
+			</div>
+			<div class="px-3 my-1 gap-1 lg:gap-2 grid md:grid-cols-2 lg:grid-cols-3">
+				{#each baseModels as model (model.id)}
+					<ModelCard
+						{model}
+						{shiftKey}
+						onHide={hideModelHandler}
+						onDelete={deleteModelHandler}
+						onDeleteConfirm={(m) => {
+							selectedModel = m;
+							showModelDeleteConfirm = true;
+						}}
+						onShare={shareModelHandler}
+						onClone={cloneModelHandler}
+						onExport={exportModelHandler}
+						onPin={(id) => pinModelHandler(id)}
+						onCopyLink={copyLinkHandler}
+					/>
+				{/each}
+			</div>
+		</div>
+	{/if}
+
+	{#if starModels.length > 0}
+		<div class="py-2 bg-white dark:bg-gray-900 rounded-3xl border border-gray-100/30 dark:border-gray-850/30 mb-3">
+			<div class="px-4 py-2">
+				<div class="text-sm font-medium text-gray-500 dark:text-gray-400">
+					{$i18n.t('Starred Assistants')}
+				</div>
+			</div>
+			<div class="px-3 my-1 gap-1 lg:gap-2 grid md:grid-cols-2 lg:grid-cols-3">
+				{#each starModels as model (model.id)}
+					<ModelCard
+						{model}
+						{shiftKey}
+						onHide={hideModelHandler}
+						onDelete={deleteModelHandler}
+						onDeleteConfirm={(m) => {
+							selectedModel = m;
+							showModelDeleteConfirm = true;
+						}}
+						onShare={shareModelHandler}
+						onClone={cloneModelHandler}
+						onExport={exportModelHandler}
+						onPin={(id) => pinModelHandler(id)}
+						onCopyLink={copyLinkHandler}
+					/>
+				{/each}
+			</div>
+		</div>
+	{/if}
 
 	<div
 		class="py-2 bg-white dark:bg-gray-900 rounded-3xl border border-gray-100/30 dark:border-gray-850/30"
@@ -453,205 +532,23 @@
 
 		{#if models !== null}
 			{#if (models ?? []).length !== 0}
-				<div class=" px-3 my-2 gap-1 lg:gap-2 grid lg:grid-cols-2" id="model-list">
+				<div class="px-3 my-2 gap-1 lg:gap-2 grid md:grid-cols-2 lg:grid-cols-3" id="model-list">
 					{#each models as model (model.id)}
-						<!-- svelte-ignore a11y_no_static_element_interactions -->
-						<!-- svelte-ignore a11y_click_events_have_key_events -->
-						<div
-							class="flex transition rounded-2xl w-full p-2.5 {model.write_access
-								? 'cursor-pointer dark:hover:bg-gray-850/50 hover:bg-gray-50'
-								: 'cursor-not-allowed opacity-60'}"
-							id="model-item-{model.id}"
-							on:click={() => {
-								if (model.write_access) {
-									goto(`/workspace/models/edit?id=${encodeURIComponent(model.id)}`);
-								}
+						<ModelCard
+							{model}
+							{shiftKey}
+							onHide={hideModelHandler}
+							onDelete={deleteModelHandler}
+							onDeleteConfirm={(m) => {
+								selectedModel = m;
+								showModelDeleteConfirm = true;
 							}}
-						>
-							<div class="flex group/item gap-3.5 w-full">
-								<div class="self-center pl-0.5">
-									<div class="flex bg-white rounded-2xl">
-										<div
-											class="{model.is_active
-												? ''
-												: 'opacity-50 dark:opacity-50'} bg-transparent rounded-2xl"
-										>
-											<img
-												src={`${WEBUI_API_BASE_URL}/models/model/profile/image?id=${model.id}&lang=${$i18n.language}`}
-												alt="modelfile profile"
-												class=" rounded-2xl size-12 object-cover"
-											/>
-										</div>
-									</div>
-								</div>
-
-								<div class=" shrink-0 flex w-full min-w-0 flex-1 pr-1 self-center">
-									<div class="flex h-full w-full flex-1 flex-col justify-start self-center group">
-										<div class="flex-1 w-full">
-											<div class="flex items-center justify-between w-full">
-												<Tooltip content={model.name} className=" w-fit" placement="top-start">
-													<a
-														class=" font-medium line-clamp-1 hover:underline capitalize"
-														href={`/?models=${encodeURIComponent(model.id)}`}
-													>
-														{model.name}
-													</a>
-												</Tooltip>
-
-												<div class="flex items-center gap-1">
-													{#if !model.write_access}
-														<div>
-															<Badge type="muted" content={$i18n.t('Read Only')} />
-														</div>
-													{/if}
-
-													{#if model.write_access || $user?.role === 'admin'}
-														<div class="flex {model.is_active ? '' : 'text-gray-500'}">
-															<div class="flex items-center gap-0.5">
-																{#if shiftKey}
-																	<Tooltip
-																		content={model?.meta?.hidden
-																			? $i18n.t('Show')
-																			: $i18n.t('Hide')}
-																	>
-																		<button
-																			class="self-center w-fit text-sm p-1.5 dark:text-white hover:bg-black/5 dark:hover:bg-white/5 rounded-xl"
-																			type="button"
-																			on:click={(e) => {
-																				e.stopPropagation();
-																				hideModelHandler(model);
-																			}}
-																		>
-																			{#if model?.meta?.hidden}
-																				<EyeSlash />
-																			{:else}
-																				<Eye />
-																			{/if}
-																		</button>
-																	</Tooltip>
-
-																	<Tooltip content={$i18n.t('Delete')}>
-																		<button
-																			class="self-center w-fit text-sm p-1.5 dark:text-white hover:bg-black/5 dark:hover:bg-white/5 rounded-xl"
-																			type="button"
-																			on:click={(e) => {
-																				e.stopPropagation();
-																				deleteModelHandler(model);
-																			}}
-																		>
-																			<GarbageBin />
-																		</button>
-																	</Tooltip>
-																{:else}
-																	<ModelMenu
-																		user={$user}
-																		{model}
-																		editHandler={() => {
-																			goto(
-																				`/workspace/models/edit?id=${encodeURIComponent(model.id)}`
-																			);
-																		}}
-																		shareHandler={() => {
-																			shareModelHandler(model);
-																		}}
-																		cloneHandler={() => {
-																			cloneModelHandler(model);
-																		}}
-																		exportHandler={() => {
-																			exportModelHandler(model);
-																		}}
-																		hideHandler={() => {
-																			hideModelHandler(model);
-																		}}
-																		pinModelHandler={() => {
-																			pinModelHandler(model.id);
-																		}}
-																		copyLinkHandler={() => {
-																			copyLinkHandler(model);
-																		}}
-																		deleteHandler={() => {
-																			selectedModel = model;
-																			showModelDeleteConfirm = true;
-																		}}
-																		onClose={() => {}}
-																	>
-																		<div
-																			class="self-center w-fit p-1 text-sm dark:text-white hover:bg-black/5 dark:hover:bg-white/5 rounded-xl"
-																		>
-																			<EllipsisHorizontal className="size-5" />
-																		</div>
-																	</ModelMenu>
-																{/if}
-															</div>
-														</div>
-													{/if}
-
-													{#if model.write_access}
-														<button
-															on:click={(e) => {
-																e.stopPropagation();
-															}}
-														>
-															<Tooltip
-																content={model.is_active ? $i18n.t('Enabled') : $i18n.t('Disabled')}
-															>
-																<Switch
-																	bind:state={model.is_active}
-																	on:change={async () => {
-																		toggleModelById(localStorage.token, model.id);
-																		_models.set(
-																			await getModels(
-																				localStorage.token,
-																				$config?.features?.enable_direct_connections &&
-																					($settings?.directConnections ?? null)
-																			)
-																		);
-																	}}
-																/>
-															</Tooltip>
-														</button>
-													{/if}
-												</div>
-											</div>
-
-											<div class=" flex gap-1 pr-2 -mt-1 items-center">
-												<Tooltip
-													content={model?.user?.email ?? $i18n.t('Deleted User')}
-													className="flex shrink-0"
-													placement="top-start"
-												>
-													<div class="shrink-0 text-gray-500 text-xs">
-														{$i18n.t('By {{name}}', {
-															name: capitalizeFirstLetter(
-																model?.user?.name ?? model?.user?.email ?? $i18n.t('Deleted User')
-															)
-														})}
-													</div>
-												</Tooltip>
-
-												<div>·</div>
-
-												<Tooltip
-													content={marked.parse(model?.meta?.description ?? model.id)}
-													className=" w-fit text-left"
-													placement="top-start"
-												>
-													<div class="flex gap-1 text-xs overflow-hidden">
-														<div class="line-clamp-1">
-															{#if (model?.meta?.description ?? '').trim()}
-																{model?.meta?.description}
-															{:else}
-																{model.id}
-															{/if}
-														</div>
-													</div>
-												</Tooltip>
-											</div>
-										</div>
-									</div>
-								</div>
-							</div>
-						</div>
+							onShare={shareModelHandler}
+							onClone={cloneModelHandler}
+							onExport={exportModelHandler}
+							onPin={(id) => pinModelHandler(id)}
+							onCopyLink={copyLinkHandler}
+						/>
 					{/each}
 				</div>
 
