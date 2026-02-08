@@ -1382,6 +1382,12 @@ USER_PERMISSIONS = PersistentConfig(
     DEFAULT_USER_PERMISSIONS,
 )
 
+ENABLE_MODEL_SELECTION = PersistentConfig(
+    "ENABLE_MODEL_SELECTION",
+    "ui.enable_model_selection",
+    os.environ.get("ENABLE_MODEL_SELECTION", "False").lower() == "true",
+)
+
 ENABLE_FOLDERS = PersistentConfig(
     "ENABLE_FOLDERS",
     "folders.enable",

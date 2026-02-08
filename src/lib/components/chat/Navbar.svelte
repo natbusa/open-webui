@@ -8,6 +8,7 @@
 		chatId,
 		config,
 		mobile,
+		models,
 		settings,
 		showArchivedChats,
 		showControls,
@@ -112,7 +113,25 @@
 			"
 				>
 					{#if showModelSelector}
-						<ModelSelector bind:selectedModels showSetDefault={!shareEnabled} />
+						{#if $config?.features?.enable_model_selection}
+							<ModelSelector bind:selectedModels showSetDefault={!shareEnabled} />
+						{:else}
+							<div class="flex w-full items-center gap-2 px-0.5">
+								<div class="truncate text-lg font-medium">
+									{$models.find((m) => m.id === selectedModels[0])?.name ?? selectedModels[0] ?? ''}
+								</div>
+								<button
+									class="flex items-center gap-1.5 cursor-pointer px-3 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 transition text-sm font-medium text-gray-700 dark:text-gray-300"
+									on:click={() => {
+										initNewChat();
+									}}
+									aria-label={$i18n.t('New Chat')}
+								>
+									<ChatPlus className="size-3.5" strokeWidth="2" />
+									{$i18n.t('New Chat')}
+								</button>
+							</div>
+						{/if}
 					{/if}
 				</div>
 

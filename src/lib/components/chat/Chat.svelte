@@ -801,7 +801,22 @@
 
 		const defaultModels = $config?.default_models ? $config?.default_models.split(',') : [];
 
-		if ($page.url.searchParams.get('models') || $page.url.searchParams.get('model')) {
+		if (!($config?.features?.enable_model_selection ?? false)) {
+			// Model selection disabled: only URL params or activeModel
+			if ($page.url.searchParams.get('models') || $page.url.searchParams.get('model')) {
+				const urlModels = (
+					$page.url.searchParams.get('models') ||
+					$page.url.searchParams.get('model') ||
+					''
+				)?.split(',');
+				selectedModels = urlModels.filter((modelId) =>
+					$models.map((m) => m.id).includes(modelId)
+				);
+			}
+			if (selectedModels.length === 0 || (selectedModels.length === 1 && selectedModels[0] === '')) {
+				selectedModels = $settings?.activeModel ? [$settings.activeModel] : [availableModels?.at(0) ?? ''];
+			}
+		} else if ($page.url.searchParams.get('models') || $page.url.searchParams.get('model')) {
 			const urlModels = (
 				$page.url.searchParams.get('models') ||
 				$page.url.searchParams.get('model') ||

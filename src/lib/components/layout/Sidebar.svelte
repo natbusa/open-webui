@@ -613,7 +613,7 @@
 			</div>
 
 			<div class="-mt-[0.5px]">
-				{#if $settings?.activeModel}
+				{#if $settings?.activeModel && ($config?.features?.enable_model_selection ?? false)}
 					<div class="">
 						<Tooltip content={$i18n.t('New Chat')} placement="right">
 							<a
@@ -828,7 +828,7 @@
 				}}
 			>
 				<div class="pb-1.5">
-					{#if $settings?.activeModel}
+					{#if $settings?.activeModel && ($config?.features?.enable_model_selection ?? false)}
 						<div class="px-[0.4375rem] flex justify-center text-gray-800 dark:text-gray-200">
 							<a
 								id="sidebar-new-chat-button"
