@@ -185,6 +185,7 @@ type Settings = {
 	splitLargeDeltas?: boolean;
 	chatDirection?: 'LTR' | 'RTL' | 'auto';
 	ctrlEnterToSend?: boolean;
+	activeModel?: string;
 
 	system?: string;
 	seed?: number;

@@ -119,7 +119,7 @@
 				<div class="self-start flex flex-none items-center text-gray-600 dark:text-gray-400">
 					<!-- <div class="md:hidden flex self-center w-[1px] h-5 mx-2 bg-gray-300 dark:bg-stone-700" /> -->
 
-					{#if $user?.role === 'user' ? ($user?.permissions?.chat?.temporary ?? true) && !($user?.permissions?.chat?.temporary_enforced ?? false) : true}
+					{#if $settings?.activeModel && ($user?.role === 'user' ? ($user?.permissions?.chat?.temporary ?? true) && !($user?.permissions?.chat?.temporary_enforced ?? false) : true)}
 						{#if !chat?.id}
 							<Tooltip content={$i18n.t(`Temporary Chat`)}>
 								<button
@@ -133,7 +133,7 @@
 											await temporaryChatEnabled.set(!$temporaryChatEnabled);
 										}
 
-										await goto('/');
+										await goto('/c');
 
 										// add 'temporary-chat=true' to the URL
 										if ($temporaryChatEnabled) {
@@ -169,7 +169,7 @@
 						{/if}
 					{/if}
 
-					{#if $mobile && !$temporaryChatEnabled && chat && chat.id}
+					{#if $settings?.activeModel && $mobile && !$temporaryChatEnabled && chat && chat.id}
 						<Tooltip content={$i18n.t('New Chat')}>
 							<button
 								class=" flex {$showSidebar

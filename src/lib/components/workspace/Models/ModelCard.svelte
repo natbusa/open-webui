@@ -7,6 +7,7 @@
 	import { config, models as _models, settings, user } from '$lib/stores';
 	import { getModels } from '$lib/apis';
 	import { toggleModelById } from '$lib/apis/models';
+	import { updateUserSettings } from '$lib/apis/users';
 	import { capitalizeFirstLetter } from '$lib/utils';
 
 	import EllipsisHorizontal from '../../icons/EllipsisHorizontal.svelte';
@@ -38,8 +39,10 @@
 <div
 	class="flex transition rounded-2xl w-full p-2.5 cursor-pointer dark:hover:bg-gray-850/50 hover:bg-gray-50"
 	id="model-item-{model.id}"
-	on:click={() => {
-		goto(`/?models=${encodeURIComponent(model.id)}`);
+	on:click={async () => {
+		$settings.activeModel = model.id;
+		await updateUserSettings(localStorage.token, { ui: $settings });
+		goto(`/c?models=${encodeURIComponent(model.id)}`);
 	}}
 >
 	<div class="flex group/item gap-3.5 w-full">

@@ -506,7 +506,7 @@
 		audioQueue.set(new AudioQueue(document.getElementById('audioElement')));
 
 		pageSubscribe = page.subscribe(async (p) => {
-			if (p.url.pathname === '/') {
+			if (p.url.pathname === '/c') {
 				await tick();
 				initNewChat();
 			}
@@ -845,6 +845,9 @@
 					// Set from session storage (temporary selection)
 					selectedModels = JSON.parse(sessionStorage.selectedModels);
 					sessionStorage.removeItem('selectedModels');
+				} else if ($settings?.activeModel) {
+					// Set from active model (workspace selection)
+					selectedModels = [$settings.activeModel];
 				} else {
 					if ($settings?.models) {
 						// Set from user settings
@@ -879,7 +882,7 @@
 		await showCallOverlay.set(false);
 
 		if ($page.url.pathname.includes('/c/')) {
-			window.history.replaceState(history.state, '', `/`);
+			window.history.replaceState(history.state, '', `/c`);
 		}
 
 		autoScroll = true;
