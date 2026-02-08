@@ -199,7 +199,6 @@ class ChatPermissions(BaseModel):
     stt: bool = True
     tts: bool = True
     call: bool = True
-    multiple_models: bool = True
     temporary: bool = True
     temporary_enforced: bool = False
 

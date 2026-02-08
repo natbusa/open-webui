@@ -9,7 +9,6 @@
 
 	const i18n = getContext<Writable<i18nType>>('i18n');
 
-	import { createNewFeedback, updateFeedbackById } from '$lib/apis/evaluations';
 	import { getChatById } from '$lib/apis/chats';
 
 	import {
@@ -379,8 +378,6 @@
 	const feedbackHandler = async (rating: number | null = null) => {
 		feedbackLoading = true;
 
-		console.log('Feedback', rating);
-
 		const updatedMessage = {
 			...message,
 			annotation: {
@@ -389,75 +386,6 @@
 			}
 		};
 
-		const chat = await getChatById(localStorage.token, chatId).catch((error) => {
-			toast.error(`${error}`);
-		});
-		if (!chat) {
-			return;
-		}
-
-		const messages = createMessagesList(history, message.id);
-
-		let feedbackItem = {
-			type: 'rating',
-			data: {
-				...(updatedMessage?.annotation ? updatedMessage.annotation : {}),
-				model_id: message?.selectedModelId ?? message.model,
-				...(history.messages[message.parentId].childrenIds.length > 1
-					? {
-							sibling_model_ids: history.messages[message.parentId].childrenIds
-								.filter((id) => id !== message.id)
-								.map((id) => history.messages[id]?.selectedModelId ?? history.messages[id].model)
-						}
-					: {})
-			},
-			meta: {
-				arena: message ? message.arena : false,
-				model_id: message.model,
-				message_id: message.id,
-				message_index: messages.length,
-				chat_id: chatId
-			},
-			snapshot: {
-				chat: chat
-			}
-		};
-
-		const baseModels = [
-			feedbackItem.data.model_id,
-			...(feedbackItem.data.sibling_model_ids ?? [])
-		].reduce((acc, modelId) => {
-			const model = $models.find((m) => m.id === modelId);
-			if (model) {
-				acc[model.id] = model?.info?.base_model_id ?? null;
-			} else {
-				// Log or handle cases where corresponding model is not found
-				console.warn(`Model with ID ${modelId} not found`);
-			}
-			return acc;
-		}, {});
-		feedbackItem.meta.base_models = baseModels;
-
-		let feedback = null;
-		if (message?.feedbackId) {
-			feedback = await updateFeedbackById(
-				localStorage.token,
-				message.feedbackId,
-				feedbackItem
-			).catch((error) => {
-				toast.error(`${error}`);
-			});
-		} else {
-			feedback = await createNewFeedback(localStorage.token, feedbackItem).catch((error) => {
-				toast.error(`${error}`);
-			});
-
-			if (feedback) {
-				updatedMessage.feedbackId = feedback.id;
-			}
-		}
-
-		console.log(updatedMessage);
 		saveMessage(message.id, updatedMessage);
 
 		await tick();

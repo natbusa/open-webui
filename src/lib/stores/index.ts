@@ -92,7 +92,7 @@ type BaseModel = {
 	id: string;
 	name: string;
 	info?: ModelConfig;
-	owned_by: 'ollama' | 'openai' | 'arena';
+	owned_by: 'ollama' | 'openai';
 };
 
 export interface OpenAIModel extends BaseModel {
@@ -249,7 +249,6 @@ type Config = {
 		enable_community_sharing: boolean;
 		enable_memories: boolean;
 		enable_autocomplete_generation: boolean;
-		enable_model_selection?: boolean;
 		enable_direct_connections: boolean;
 		enable_version_update_check: boolean;
 		folder_max_file_count?: number;

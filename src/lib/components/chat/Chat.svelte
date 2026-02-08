@@ -65,7 +65,6 @@
 	import {
 		chatCompleted,
 		generateQueries,
-		generateMoACompletion,
 		stopTask,
 		getTaskIdsByChatId
 	} from '$lib/apis';
@@ -775,82 +774,32 @@
 
 		const defaultModels = $config?.default_models ? $config?.default_models.split(',') : [];
 
-		if (!($config?.features?.enable_model_selection ?? false)) {
-			// Model selection disabled: only URL params or activeModel
-			if ($page.url.searchParams.get('models') || $page.url.searchParams.get('model')) {
-				const urlModels = (
-					$page.url.searchParams.get('models') ||
-					$page.url.searchParams.get('model') ||
-					''
-				)?.split(',');
-				selectedModels = urlModels.filter((modelId) =>
-					$models.map((m) => m.id).includes(modelId)
-				);
-			}
-			if (selectedModels.length === 0 || (selectedModels.length === 1 && selectedModels[0] === '')) {
-				selectedModels = $settings?.activeModel ? [$settings.activeModel] : [availableModels?.at(0) ?? ''];
-			}
-		} else if ($page.url.searchParams.get('models') || $page.url.searchParams.get('model')) {
-			const urlModels = (
+		// Single model selection: URL param → folder model → session storage → activeModel → default → first available
+		if ($page.url.searchParams.get('models') || $page.url.searchParams.get('model')) {
+			const urlModel = (
 				$page.url.searchParams.get('models') ||
 				$page.url.searchParams.get('model') ||
 				''
-			)?.split(',');
-
-			if (urlModels.length === 1) {
-				if (!$models.find((m) => m.id === urlModels[0])) {
-					// Model not found; open model selector and prefill
-					const modelSelectorButton = document.getElementById('model-selector-0-button');
-					if (modelSelectorButton) {
-						modelSelectorButton.click();
-						await tick();
-
-						const modelSelectorInput = document.getElementById('model-search-input');
-						if (modelSelectorInput) {
-							modelSelectorInput.focus();
-							modelSelectorInput.value = urlModels[0];
-							modelSelectorInput.dispatchEvent(new Event('input'));
-						}
-					}
-				} else {
-					// Model found; set it as selected
-					selectedModels = urlModels;
-				}
-			} else {
-				// Multiple models; set as selected
-				selectedModels = urlModels;
+			)?.split(',')[0];
+			if (availableModels.includes(urlModel)) {
+				selectedModels = [urlModel];
 			}
-
-			// Unavailable models filtering
-			selectedModels = selectedModels.filter((modelId) =>
-				$models.map((m) => m.id).includes(modelId)
-			);
-		} else {
-			if ($selectedFolder?.data?.model_ids) {
-				// Set from folder model IDs
-				selectedModels = $selectedFolder?.data?.model_ids;
-			} else {
-				if (sessionStorage.selectedModels) {
-					// Set from session storage (temporary selection)
-					selectedModels = JSON.parse(sessionStorage.selectedModels);
-					sessionStorage.removeItem('selectedModels');
-				} else if ($settings?.activeModel) {
-					// Set from active model (workspace selection)
-					selectedModels = [$settings.activeModel];
-				} else {
-					if ($settings?.models) {
-						// Set from user settings
-						selectedModels = $settings?.models;
-					} else if (defaultModels && defaultModels.length > 0) {
-						// Set from default models
-						selectedModels = defaultModels;
-					}
-				}
-			}
-
-			// Unavailable & hidden models filtering
-			selectedModels = selectedModels.filter((modelId) => availableModels.includes(modelId));
+		} else if ($selectedFolder?.data?.model_ids?.[0]) {
+			selectedModels = [$selectedFolder.data.model_ids[0]];
+		} else if (sessionStorage.selectedModels) {
+			try {
+				const stored = JSON.parse(sessionStorage.selectedModels);
+				selectedModels = [stored[0] ?? ''];
+			} catch { selectedModels = ['']; }
+			sessionStorage.removeItem('selectedModels');
+		} else if ($settings?.activeModel) {
+			selectedModels = [$settings.activeModel];
+		} else if (defaultModels.length > 0) {
+			selectedModels = [defaultModels[0]];
 		}
+
+		// Filter to available models
+		selectedModels = selectedModels.filter((modelId) => availableModels.includes(modelId));
 
 		// Ensure at least one model is selected
 		if (selectedModels.length === 0 || (selectedModels.length === 1 && selectedModels[0] === '')) {
@@ -953,12 +902,8 @@
 
 				selectedModels =
 					(chatContent?.models ?? undefined) !== undefined
-						? chatContent.models
-						: [chatContent.models ?? ''];
-
-				if (!($user?.role === 'admin' || ($user?.permissions?.chat?.multiple_models ?? true))) {
-					selectedModels = selectedModels.length > 0 ? [selectedModels[0]] : [''];
-				}
+						? [chatContent.models[0] ?? '']
+						: [''];
 
 				oldSelectedModelIds = JSON.parse(JSON.stringify(selectedModels));
 
@@ -1111,7 +1056,6 @@
 
 				model: modelId,
 				modelName: model.name ?? model.id,
-				modelIdx: 0,
 				timestamp: Math.floor(Date.now() / 1000)
 			};
 
@@ -1171,7 +1115,6 @@
 					done: true,
 					model: model.id,
 					modelName: model.name ?? model.id,
-					modelIdx: 0,
 					timestamp: Math.floor(Date.now() / 1000),
 					...message
 				};
@@ -1202,7 +1145,7 @@
 	};
 
 	const chatCompletionEventHandler = async (data, message, chatId) => {
-		const { id, done, choices, content, sources, selected_model_id, error, usage } = data;
+		const { id, done, choices, content, sources, error, usage } = data;
 
 		if (error) {
 			await handleOpenAIError(error, message);
@@ -1284,11 +1227,6 @@
 					})
 				);
 			}
-		}
-
-		if (selected_model_id) {
-			message.selectedModelId = selected_model_id;
-			message.arena = true;
 		}
 
 		if (usage) {
@@ -1473,12 +1411,10 @@
 		{
 			messages = null,
 			modelId = null,
-			modelIdx = null,
 			newChat = false
 		}: {
 			messages?: any[] | null;
 			modelId?: string | null;
-			modelIdx?: number | null;
 			newChat?: boolean;
 		} = {}
 	) => {
@@ -1509,7 +1445,6 @@
 					content: '',
 					model: model.id,
 					modelName: model.name ?? model.id,
-					modelIdx: modelIdx ? modelIdx : _modelIdx,
 					timestamp: Math.floor(Date.now() / 1000) // Unix epoch
 				};
 
@@ -1526,7 +1461,7 @@
 					];
 				}
 
-				responseMessageIds[`${modelId}-${modelIdx ? modelIdx : _modelIdx}`] = responseMessageId;
+				responseMessageIds[`${modelId}-${_modelIdx}`] = responseMessageId;
 			}
 		}
 		history = history;
@@ -1569,7 +1504,7 @@
 					}
 
 					let responseMessageId =
-						responseMessageIds[`${modelId}-${modelIdx ? modelIdx : _modelIdx}`];
+						responseMessageIds[`${modelId}-${_modelIdx}`];
 					const chatEventEmitter = await getChatEventEmitter(model.id, _chatId);
 
 					scrollToBottom();
@@ -1958,69 +1893,8 @@
 								}
 							]
 						}
-					: {}),
-				...((userMessage?.models ?? [...selectedModels]).length > 1
-					? {
-							// If multiple models are selected, use the model from the message
-							modelId: message.model,
-							modelIdx: message.modelIdx
-						}
 					: {})
 			});
-		}
-	};
-
-	const mergeResponses = async (messageId, responses, _chatId) => {
-		console.log('mergeResponses', messageId, responses);
-		const message = history.messages[messageId];
-		const mergedResponse = {
-			status: true,
-			content: ''
-		};
-		message.merged = mergedResponse;
-		history.messages[messageId] = message;
-
-		try {
-			generating = true;
-			const [res, controller] = await generateMoACompletion(
-				localStorage.token,
-				message.model ?? '',
-				message.parentId ? history.messages[message.parentId].content : '',
-				responses
-			);
-
-			if (res && res.ok && res.body && generating) {
-				generationController = controller as AbortController;
-				const textStream = await createOpenAITextStream(
-					res.body,
-					Boolean($settings?.splitLargeChunks ?? false)
-				);
-				for await (const update of textStream) {
-					const { value, done, sources, error, usage } = update;
-					if (error || done) {
-						generating = false;
-						generationController = null;
-						break;
-					}
-
-					if (mergedResponse.content == '' && value == '\n') {
-						continue;
-					} else {
-						mergedResponse.content += value;
-						history.messages[messageId] = message;
-					}
-
-					if (autoScroll) {
-						scrollToBottom();
-					}
-				}
-
-				await saveChatHandler(_chatId, history);
-			} else {
-				console.error(res);
-			}
-		} catch (e) {
-			console.error(e);
 		}
 	};
 
@@ -2204,7 +2078,7 @@
 						}}
 						{history}
 						title={$chatTitle}
-						bind:selectedModels
+						activeModelId={selectedModels[0] ?? ''}
 						shareEnabled={!!history.currentId}
 						{initNewChat}
 						archiveChatHandler={() => {}}
@@ -2268,12 +2142,11 @@
 										setInputText={(text) => {
 											messageInput?.setText(text);
 										}}
-										{selectedModels}
+										selectedModels={selectedModels[0] ?? ''}
 										{sendMessage}
 										{showMessage}
 										{submitMessage}
 										{regenerateResponse}
-										{mergeResponses}
 										{addMessages}
 										topPadding={true}
 										bottomPadding={files.length > 0}
@@ -2287,7 +2160,7 @@
 									bind:this={messageInput}
 									{history}
 									{taskIds}
-									{selectedModels}
+									selectedModels={selectedModels}
 									bind:files
 									bind:prompt
 									bind:autoScroll
@@ -2322,7 +2195,7 @@
 							<div class="flex items-center h-full">
 								<Placeholder
 									{history}
-									{selectedModels}
+									activeModelId={selectedModels[0] ?? ''}
 									bind:messageInput
 									bind:files
 									bind:prompt

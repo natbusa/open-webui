@@ -1291,12 +1291,6 @@
 														class=" bg-black text-white hover:bg-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-100 transition rounded-full p-1.5 self-center"
 														type="button"
 														on:click={async () => {
-															if (selectedModels.length > 1) {
-																toast.error($i18n.t('Select only one model to call'));
-
-																return;
-															}
-
 															if ($config.audio.stt.engine === 'web') {
 																toast.error(
 																	$i18n.t('Call feature is not supported when using Web STT engine')

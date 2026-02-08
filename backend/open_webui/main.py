@@ -84,7 +84,6 @@ from open_webui.routers import (
     memories,
     models,
     knowledge,
-    evaluations,
     users,
     utils,
     scim,
@@ -341,15 +340,12 @@ from open_webui.config import (
     ENABLE_API_KEYS,
     ENABLE_API_KEYS_ENDPOINT_RESTRICTIONS,
     API_KEYS_ALLOWED_ENDPOINTS,
-    ENABLE_MODEL_SELECTION,
     ENABLE_FOLDERS,
     FOLDER_MAX_FILE_COUNT,
     ENABLE_USER_STATUS,
     ENABLE_COMMUNITY_SHARING,
     ENABLE_MESSAGE_RATING,
     ENABLE_USER_WEBHOOKS,
-    EVALUATION_METHOD,
-    ENABLE_EVALUATION_ARENA_MODELS,
     BYPASS_ADMIN_ACCESS_CONTROL,
     USER_PERMISSIONS,
     DEFAULT_USER_ROLE,
@@ -359,9 +355,7 @@ from open_webui.config import (
     DEFAULT_PROMPT_SUGGESTIONS,
     DEFAULT_MODELS,
     DEFAULT_PINNED_MODELS,
-    DEFAULT_ARENA_MODEL,
     MODEL_ORDER_LIST,
-    EVALUATION_ARENA_MODELS,
     # WebUI (OAuth)
     ENABLE_OAUTH_ROLE_MANAGEMENT,
     OAUTH_ROLES_CLAIM,
@@ -755,17 +749,12 @@ app.state.config.WEBHOOK_URL = WEBHOOK_URL
 app.state.config.BANNERS = WEBUI_BANNERS
 
 
-app.state.config.ENABLE_MODEL_SELECTION = ENABLE_MODEL_SELECTION
 app.state.config.ENABLE_FOLDERS = ENABLE_FOLDERS
 app.state.config.FOLDER_MAX_FILE_COUNT = FOLDER_MAX_FILE_COUNT
 app.state.config.ENABLE_COMMUNITY_SHARING = ENABLE_COMMUNITY_SHARING
 app.state.config.ENABLE_MESSAGE_RATING = ENABLE_MESSAGE_RATING
 app.state.config.ENABLE_USER_WEBHOOKS = ENABLE_USER_WEBHOOKS
 app.state.config.ENABLE_USER_STATUS = ENABLE_USER_STATUS
-
-app.state.config.EVALUATION_METHOD = EVALUATION_METHOD
-app.state.config.ENABLE_EVALUATION_ARENA_MODELS = ENABLE_EVALUATION_ARENA_MODELS
-app.state.config.EVALUATION_ARENA_MODELS = EVALUATION_ARENA_MODELS
 
 app.state.config.OAUTH_USERNAME_CLAIM = OAUTH_USERNAME_CLAIM
 app.state.config.OAUTH_PICTURE_CLAIM = OAUTH_PICTURE_CLAIM
@@ -1359,9 +1348,6 @@ app.include_router(memories.router, prefix="/api/v1/memories", tags=["memories"]
 app.include_router(folders.router, prefix="/api/v1/folders", tags=["folders"])
 app.include_router(groups.router, prefix="/api/v1/groups", tags=["groups"])
 app.include_router(files.router, prefix="/api/v1/files", tags=["files"])
-app.include_router(
-    evaluations.router, prefix="/api/v1/evaluations", tags=["evaluations"]
-)
 app.include_router(utils.router, prefix="/api/v1/utils", tags=["utils"])
 
 # SCIM 2.0 API for identity management
@@ -1835,7 +1821,6 @@ async def get_app_config(request: Request):
             "enable_public_active_users_count": ENABLE_PUBLIC_ACTIVE_USERS_COUNT,
             **(
                 {
-                    "enable_model_selection": app.state.config.ENABLE_MODEL_SELECTION,
                     "enable_direct_connections": app.state.config.ENABLE_DIRECT_CONNECTIONS,
                     "enable_folders": app.state.config.ENABLE_FOLDERS,
                     "folder_max_file_count": app.state.config.FOLDER_MAX_FILE_COUNT,

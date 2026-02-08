@@ -29,7 +29,7 @@
 
 	export let autoScroll = false;
 
-	export let selectedModels: [''];
+	export let activeModelId: string = '';
 
 	export let history;
 
@@ -46,14 +46,7 @@
 	export let onSelect = (e) => {};
 	export let onChange = (e) => {};
 
-	let models = [];
-	let selectedModelIdx = 0;
-
-	$: if (selectedModels.length > 0) {
-		selectedModelIdx = models.length - 1;
-	}
-
-	$: models = selectedModels.map((id) => $_models.find((m) => m.id === id));
+	$: model = $_models.find((m) => m.id === activeModelId);
 </script>
 
 <div class="m-auto w-full max-w-6xl px-2 @2xl:px-20 translate-y-6 py-24 text-center">
@@ -100,7 +93,7 @@
 				<MessageInput
 					bind:this={messageInput}
 					{history}
-					{selectedModels}
+					selectedModels={activeModelId}
 					bind:files
 					bind:prompt
 					bind:autoScroll
@@ -130,7 +123,7 @@
 		<div class="mx-auto max-w-2xl font-primary mt-2" in:fade={{ duration: 200, delay: 200 }}>
 			<div class="mx-5">
 				<Suggestions
-					suggestionPrompts={models[selectedModelIdx]?.info?.meta?.suggestion_prompts ??
+					suggestionPrompts={model?.info?.meta?.suggestion_prompts ??
 						$config?.default_prompt_suggestions ??
 						[]}
 					inputValue={prompt}

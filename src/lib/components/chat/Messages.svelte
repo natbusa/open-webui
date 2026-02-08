@@ -39,7 +39,6 @@
 
 	export let sendMessage: Function;
 	export let regenerateResponse: Function;
-	export let mergeResponses: Function;
 
 	export let showMessage: Function = () => {};
 	export let submitMessage: Function = () => {};
@@ -267,7 +266,7 @@
 	};
 
 	const editMessage = async (messageId, { content, files }, submit = true) => {
-		if ((selectedModels ?? []).filter((id) => id).length === 0) {
+		if (!selectedModels) {
 			toast.error($i18n.t('Model not selected'));
 			return;
 		}
@@ -284,7 +283,7 @@
 					role: 'user',
 					content: userPrompt,
 					...(files && { files: files }),
-					models: selectedModels,
+					models: [selectedModels],
 					timestamp: Math.floor(Date.now() / 1000) // Unix epoch
 				};
 
@@ -406,7 +405,7 @@
 
 <div class={className}>
 	{#if Object.keys(history?.messages ?? {}).length == 0}
-		<ChatPlaceholder modelIds={selectedModels}  {onSelect} />
+		<ChatPlaceholder modelId={selectedModels} {onSelect} />
 	{:else}
 		<div class="w-full pt-2">
 			{#key chatId}
@@ -432,7 +431,6 @@
 							<Message
 								{chatId}
 								bind:history
-								{selectedModels}
 								messageId={message.id}
 								idx={messageIdx}
 								{user}
@@ -447,7 +445,6 @@
 								{saveMessage}
 								{submitMessage}
 								{regenerateResponse}
-								{mergeResponses}
 								{addMessages}
 								{triggerScroll}
 								{readOnly}

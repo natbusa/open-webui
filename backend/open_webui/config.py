@@ -1283,9 +1283,6 @@ USER_PERMISSIONS_CHAT_CALL = (
     os.environ.get("USER_PERMISSIONS_CHAT_CALL", "True").lower() == "true"
 )
 
-USER_PERMISSIONS_CHAT_MULTIPLE_MODELS = (
-    os.environ.get("USER_PERMISSIONS_CHAT_MULTIPLE_MODELS", "True").lower() == "true"
-)
 
 USER_PERMISSIONS_CHAT_TEMPORARY = (
     os.environ.get("USER_PERMISSIONS_CHAT_TEMPORARY", "True").lower() == "true"
@@ -1353,7 +1350,6 @@ DEFAULT_USER_PERMISSIONS = {
         "stt": USER_PERMISSIONS_CHAT_STT,
         "tts": USER_PERMISSIONS_CHAT_TTS,
         "call": USER_PERMISSIONS_CHAT_CALL,
-        "multiple_models": USER_PERMISSIONS_CHAT_MULTIPLE_MODELS,
         "temporary": USER_PERMISSIONS_CHAT_TEMPORARY,
         "temporary_enforced": USER_PERMISSIONS_CHAT_TEMPORARY_ENFORCED,
     },
@@ -1377,12 +1373,6 @@ USER_PERMISSIONS = PersistentConfig(
     DEFAULT_USER_PERMISSIONS,
 )
 
-ENABLE_MODEL_SELECTION = PersistentConfig(
-    "ENABLE_MODEL_SELECTION",
-    "ui.enable_model_selection",
-    os.environ.get("ENABLE_MODEL_SELECTION", "False").lower() == "true",
-)
-
 ENABLE_FOLDERS = PersistentConfig(
     "ENABLE_FOLDERS",
     "folders.enable",
@@ -1400,33 +1390,6 @@ ENABLE_USER_STATUS = PersistentConfig(
     "users.enable_status",
     os.environ.get("ENABLE_USER_STATUS", "True").lower() == "true",
 )
-
-EVALUATION_METHOD = PersistentConfig(
-    "EVALUATION_METHOD",
-    "evaluation.method",
-    os.environ.get("EVALUATION_METHOD", "reviews"),
-)
-
-ENABLE_EVALUATION_ARENA_MODELS = PersistentConfig(
-    "ENABLE_EVALUATION_ARENA_MODELS",
-    "evaluation.arena.enable",
-    os.environ.get("ENABLE_EVALUATION_ARENA_MODELS", "True").lower() == "true",
-)
-EVALUATION_ARENA_MODELS = PersistentConfig(
-    "EVALUATION_ARENA_MODELS",
-    "evaluation.arena.models",
-    [],
-)
-
-DEFAULT_ARENA_MODEL = {
-    "id": "arena-model",
-    "name": "Arena Model",
-    "meta": {
-        "profile_image_url": "/favicon.png",
-        "description": "Submit your questions to anonymous AI chatbots and vote on the best response.",
-        "model_ids": None,
-    },
-}
 
 WEBHOOK_URL = PersistentConfig(
     "WEBHOOK_URL", "webhook_url", os.environ.get("WEBHOOK_URL", "")

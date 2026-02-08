@@ -22,7 +22,6 @@
 	import { goto } from '$app/navigation';
 
 	import ShareChatModal from '../chat/ShareChatModal.svelte';
-	import ModelSelector from '../chat/ModelSelector.svelte';
 	import Tooltip from '../common/Tooltip.svelte';
 	import Menu from '$lib/components/layout/Navbar/Menu.svelte';
 	import UserMenu from '$lib/components/layout/Sidebar/UserMenu.svelte';
@@ -49,7 +48,7 @@
 
 	export let chat;
 	export let history;
-	export let selectedModels;
+	export let activeModelId: string = '';
 	export let showModelSelector = true;
 
 	export let onSaveTempChat: () => {};
@@ -113,25 +112,21 @@
 			"
 				>
 					{#if showModelSelector}
-						{#if $config?.features?.enable_model_selection}
-							<ModelSelector bind:selectedModels showSetDefault={!shareEnabled} />
-						{:else}
-							<div class="flex w-full items-center gap-2 px-0.5">
-								<div class="truncate text-lg font-medium">
-									{$models.find((m) => m.id === selectedModels[0])?.name ?? selectedModels[0] ?? ''}
-								</div>
-								<button
-									class="flex items-center gap-1.5 cursor-pointer px-3 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 transition text-sm font-medium text-gray-700 dark:text-gray-300"
-									on:click={() => {
-										initNewChat();
-									}}
-									aria-label={$i18n.t('New Chat')}
-								>
-									<ChatPlus className="size-3.5" strokeWidth="2" />
-									{$i18n.t('New Chat')}
-								</button>
+						<div class="flex w-full items-center gap-2 px-0.5">
+							<div class="truncate text-lg font-medium">
+								{$models.find((m) => m.id === activeModelId)?.name ?? activeModelId ?? ''}
 							</div>
-						{/if}
+							<button
+								class="flex items-center gap-1.5 cursor-pointer px-3 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 transition text-sm font-medium text-gray-700 dark:text-gray-300"
+								on:click={() => {
+									initNewChat();
+								}}
+								aria-label={$i18n.t('New Chat')}
+							>
+								<ChatPlus className="size-3.5" strokeWidth="2" />
+								{$i18n.t('New Chat')}
+							</button>
+						</div>
 					{/if}
 				</div>
 

@@ -28,7 +28,6 @@ export const DEFAULT_PERMISSIONS = {
 		stt: true,
 		tts: true,
 		call: true,
-		multiple_models: true,
 		temporary: true,
 		temporary_enforced: false
 	},

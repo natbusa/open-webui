@@ -18,10 +18,6 @@
 	import Documents from './Settings/Documents.svelte';
 	import WebSearch from './Settings/WebSearch.svelte';
 
-	import Evaluations from './Settings/Evaluations.svelte';
-
-	import ChartBar from '../icons/ChartBar.svelte';
-	import DocumentChartBar from '../icons/DocumentChartBar.svelte';
 	import Search from '../icons/Search.svelte';
 	import XMark from '../icons/XMark.svelte';
 
@@ -37,7 +33,6 @@
 			'general',
 			'connections',
 			'models',
-			'evaluations',
 			'documents',
 			'web',
 			'interface',
@@ -119,12 +114,6 @@
 				'import',
 				'export'
 			]
-		},
-		{
-			id: 'evaluations',
-			title: 'Evaluations',
-			route: '/admin/settings/evaluations',
-			keywords: ['evaluations', 'feedback', 'rating', 'arena', 'leaderboard', 'preference']
 		},
 		{
 			id: 'documents',
@@ -293,7 +282,6 @@
 		<!-- {$i18n.t('General')} -->
 		<!-- {$i18n.t('Connections')} -->
 		<!-- {$i18n.t('Models')} -->
-		<!-- {$i18n.t('Evaluations')} -->
 		<!-- {$i18n.t('External Tools')} -->
 		<!-- {$i18n.t('Documents')} -->
 		<!-- {$i18n.t('Web Search')} -->
@@ -352,8 +340,6 @@
 								clip-rule="evenodd"
 							/>
 						</svg>
-					{:else if tab.id === 'evaluations'}
-						<DocumentChartBar />
 					{:else if tab.id === 'documents'}
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
@@ -481,8 +467,6 @@
 			/>
 		{:else if selectedTab === 'models'}
 			<Models />
-		{:else if selectedTab === 'evaluations'}
-			<Evaluations />
 		{:else if selectedTab === 'documents'}
 			<Documents
 				on:save={async () => {
