@@ -20,7 +20,6 @@
 	const dispatch = createEventDispatcher();
 
 	import {
-		type Model,
 		mobile,
 		settings,
 		models,
@@ -86,11 +85,7 @@
 	export let autoScroll = false;
 	export let generating = false;
 
-	export let atSelectedModel: Model | undefined = undefined;
 	export let selectedModels: [''];
-
-	let selectedModelIds = [];
-	$: selectedModelIds = atSelectedModel !== undefined ? [atSelectedModel.id] : selectedModels;
 
 	export let history;
 	export let taskIds = null;
@@ -284,35 +279,13 @@
 		}
 	};
 
-	const getCommand = () => {
-		const chatInput = document.getElementById('chat-input');
-		let word = '';
-
-		if (chatInput) {
-			word = chatInputElement?.getWordAtDocPos();
-		}
-
-		return word;
-	};
-
-	const replaceCommandWithText = (text) => {
-		const chatInput = document.getElementById('chat-input');
-		if (!chatInput) return;
-
-		chatInputElement?.replaceCommandWithText(text);
-	};
-
 	const insertTextAtCursor = async (text: string) => {
 		const chatInput = document.getElementById('chat-input');
 		if (!chatInput) return;
 
 		text = await textVariableHandler(text);
 
-		if (command) {
-			replaceCommandWithText(text);
-		} else {
-			chatInputElement?.insertContent(text);
-		}
+		chatInputElement?.insertContent(text);
 
 		await tick();
 		text = await inputVariableHandler(text);
@@ -339,10 +312,6 @@
 		}
 	};
 
-	let command = '';
-	export let showCommands = false;
-	$: showCommands = ['#', '@'].includes(command?.charAt(0)) || '\\#' === command?.slice(0, 2);
-
 	let loaded = false;
 	let recording = false;
 
@@ -350,7 +319,6 @@
 	let chatInputElement;
 
 	let filesInputElement;
-	let commandsElement;
 
 	let inputFiles;
 
@@ -363,38 +331,36 @@
 	export let placeholder = '';
 
 	let visionCapableModels = [];
-	$: visionCapableModels = (atSelectedModel?.id ? [atSelectedModel.id] : selectedModels).filter(
+	$: visionCapableModels = selectedModels.filter(
 		(model) => $models.find((m) => m.id === model)?.info?.meta?.capabilities?.vision ?? true
 	);
 
 	let fileUploadCapableModels = [];
-	$: fileUploadCapableModels = (atSelectedModel?.id ? [atSelectedModel.id] : selectedModels).filter(
+	$: fileUploadCapableModels = selectedModels.filter(
 		(model) => $models.find((m) => m.id === model)?.info?.meta?.capabilities?.file_upload ?? true
 	);
 
 	let webSearchCapableModels = [];
-	$: webSearchCapableModels = (atSelectedModel?.id ? [atSelectedModel.id] : selectedModels).filter(
+	$: webSearchCapableModels = selectedModels.filter(
 		(model) => $models.find((m) => m.id === model)?.info?.meta?.capabilities?.web_search ?? true
 	);
 
 	let imageGenerationCapableModels = [];
-	$: imageGenerationCapableModels = (
-		atSelectedModel?.id ? [atSelectedModel.id] : selectedModels
-	).filter(
+	$: imageGenerationCapableModels = selectedModels.filter(
 		(model) =>
 			$models.find((m) => m.id === model)?.info?.meta?.capabilities?.image_generation ?? true
 	);
 
 	let showWebSearchButton = false;
 	$: showWebSearchButton =
-		(atSelectedModel?.id ? [atSelectedModel.id] : selectedModels).length ===
+		selectedModels.length ===
 			webSearchCapableModels.length &&
 		$config?.features?.enable_web_search &&
 		($_user.role === 'admin' || $_user?.permissions?.features?.web_search);
 
 	let showImageGenerationButton = false;
 	$: showImageGenerationButton =
-		(atSelectedModel?.id ? [atSelectedModel.id] : selectedModels).length ===
+		selectedModels.length ===
 			imageGenerationCapableModels.length &&
 		$config?.features?.enable_image_generation &&
 		($_user.role === 'admin' || $_user?.permissions?.features?.image_generation);
@@ -890,33 +856,6 @@
 								: ' border-gray-100/30 dark:border-gray-850/30 hover:border-gray-200 focus-within:border-gray-100 hover:dark:border-gray-800 focus-within:dark:border-gray-800'}  transition px-1 bg-white/5 dark:bg-gray-500/5 backdrop-blur-sm dark:text-gray-100"
 							dir={$settings?.chatDirection ?? 'auto'}
 						>
-							{#if atSelectedModel !== undefined}
-								<div class="px-3 pt-3 text-left w-full flex flex-col z-10">
-									<div class="flex items-center justify-between w-full">
-										<div class="pl-[1px] flex items-center gap-2 text-sm dark:text-gray-500">
-											<img
-												alt="model profile"
-												class="size-3.5 max-w-[28px] object-cover rounded-full"
-												src={`${WEBUI_API_BASE_URL}/models/model/profile/image?id=${$models.find((model) => model.id === atSelectedModel.id).id}&lang=${$i18n.language}`}
-											/>
-											<div class="translate-y-[0.5px]">
-												<span class="">{atSelectedModel.name}</span>
-											</div>
-										</div>
-										<div>
-											<button
-												class="flex items-center dark:text-gray-500"
-												on:click={() => {
-													atSelectedModel = undefined;
-												}}
-											>
-												<XMark />
-											</button>
-										</div>
-									</div>
-								</div>
-							{/if}
-
 							{#if files.length > 0}
 								<div
 									class="mx-2 mt-2.5 pb-1.5 flex items-center flex-wrap gap-2"
@@ -935,11 +874,11 @@
 														alt=""
 														imageClassName=" size-10 rounded-xl object-cover"
 													/>
-													{#if atSelectedModel ? visionCapableModels.length === 0 : selectedModels.length !== visionCapableModels.length}
+													{#if selectedModels.length !== visionCapableModels.length}
 														<Tooltip
 															className=" absolute top-1 left-1"
 															content={$i18n.t('{{ models }}', {
-																models: [...(atSelectedModel ? [atSelectedModel] : selectedModels)]
+																models: selectedModels
 																	.filter((id) => !visionCapableModels.includes(id))
 																	.join(', ')
 															})}
@@ -1016,9 +955,7 @@
 								<div
 									class="scrollbar-hidden rtl:text-right ltr:text-left bg-transparent dark:text-gray-100 outline-hidden w-full pb-1 px-1 resize-none h-fit max-h-96 overflow-auto {files.length ===
 									0
-										? atSelectedModel !== undefined
-											? 'pt-1.5'
-											: 'pt-2.5'
+										? 'pt-2.5'
 										: ''}"
 									id="chat-input-container"
 								>
@@ -1046,7 +983,6 @@
 									placeholder={placeholder ? placeholder : $i18n.t('Send a Message')}
 									onChange={(content) => {
 										prompt = content.md;
-										command = getCommand();
 									}}
 										on:keydown={async (e) => {
 										e = e.detail;
@@ -1097,9 +1033,7 @@
 
 										if (e.key === 'Escape') {
 											console.log('Escape');
-											atSelectedModel = undefined;
-
-											webSearchEnabled = false;
+												webSearchEnabled = false;
 											imageGenerationEnabled = false;
 											}
 									}}
@@ -1147,7 +1081,7 @@
 								<div class="ml-1 self-end flex items-center flex-1 max-w-[80%]">
 									<InputMenu
 										bind:files
-										selectedModels={atSelectedModel ? [atSelectedModel.id] : selectedModels}
+										selectedModels={selectedModels}
 										{fileUploadCapableModels}
 										{screenCaptureHandler}
 										{inputFilesHandler}
@@ -1211,7 +1145,7 @@
 										/>
 
 										<IntegrationsMenu
-											selectedModels={atSelectedModel ? [atSelectedModel.id] : selectedModels}
+											selectedModels={selectedModels}
 											{showWebSearchButton}
 											{showImageGenerationButton}
 											bind:webSearchEnabled

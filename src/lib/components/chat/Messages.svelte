@@ -32,7 +32,6 @@
 	export let prompt;
 	export let history = {};
 	export let selectedModels;
-	export let atSelectedModel;
 
 	let messages = [];
 
@@ -407,7 +406,7 @@
 
 <div class={className}>
 	{#if Object.keys(history?.messages ?? {}).length == 0}
-		<ChatPlaceholder modelIds={selectedModels} {atSelectedModel} {onSelect} />
+		<ChatPlaceholder modelIds={selectedModels}  {onSelect} />
 	{:else}
 		<div class="w-full pt-2">
 			{#key chatId}

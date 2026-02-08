@@ -4,8 +4,7 @@
 	import { fly } from 'svelte/transition';
 	import { flyAndScale } from '$lib/utils/transitions';
 
-	import { config, user, mobile, knowledge, chats } from '$lib/stores';
-	import { getKnowledgeBases } from '$lib/apis/knowledge';
+	import { config, user, mobile, chats } from '$lib/stores';
 
 	import { createPicker } from '$lib/utils/google-drive-picker';
 
@@ -18,12 +17,9 @@
 	import Refresh from '$lib/components/icons/Refresh.svelte';
 	import Agile from '$lib/components/icons/Agile.svelte';
 	import ClockRotateRight from '$lib/components/icons/ClockRotateRight.svelte';
-	import Database from '$lib/components/icons/Database.svelte';
 	import ChevronRight from '$lib/components/icons/ChevronRight.svelte';
 	import ChevronLeft from '$lib/components/icons/ChevronLeft.svelte';
-	import PageEdit from '$lib/components/icons/PageEdit.svelte';
 	import Chats from './InputMenu/Chats.svelte';
-	import Knowledge from './InputMenu/Knowledge.svelte';
 	import AttachWebpageModal from './AttachWebpageModal.svelte';
 	import GlobeAlt from '$lib/components/icons/GlobeAlt.svelte';
 
@@ -149,91 +145,6 @@
 
 							<div class="line-clamp-1">{$i18n.t('Upload Files')}</div>
 						</DropdownMenu.Item>
-					</Tooltip>
-
-					<Tooltip
-						content={fileUploadCapableModels.length !== selectedModels.length
-							? $i18n.t('Model(s) do not support file upload')
-							: !fileUploadEnabled
-								? $i18n.t('You do not have permission to upload files.')
-								: ''}
-						className="w-full"
-					>
-						<DropdownMenu.Item
-							class="flex gap-2 items-center px-3 py-1.5 text-sm  cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50  rounded-xl {!fileUploadEnabled
-								? 'opacity-50'
-								: ''}"
-							on:click={() => {
-								if (fileUploadEnabled) {
-									if (!detectMobile()) {
-										screenCaptureHandler();
-									} else {
-										const cameraInputElement = document.getElementById('camera-input');
-
-										if (cameraInputElement) {
-											cameraInputElement.click();
-										}
-									}
-								}
-							}}
-						>
-							<Camera />
-							<div class=" line-clamp-1">{$i18n.t('Capture')}</div>
-						</DropdownMenu.Item>
-					</Tooltip>
-
-					<Tooltip
-						content={fileUploadCapableModels.length !== selectedModels.length
-							? $i18n.t('Model(s) do not support file upload')
-							: !fileUploadEnabled
-								? $i18n.t('You do not have permission to upload files.')
-								: ''}
-						className="w-full"
-					>
-						<DropdownMenu.Item
-							class="flex gap-2 items-center px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl {!fileUploadEnabled
-								? 'opacity-50'
-								: ''}"
-							on:click={() => {
-								if (fileUploadEnabled) {
-									showAttachWebpageModal = true;
-								}
-							}}
-						>
-							<GlobeAlt />
-							<div class="line-clamp-1">{$i18n.t('Attach Webpage')}</div>
-						</DropdownMenu.Item>
-					</Tooltip>
-
-
-					<Tooltip
-						content={fileUploadCapableModels.length !== selectedModels.length
-							? $i18n.t('Model(s) do not support file upload')
-							: !fileUploadEnabled
-								? $i18n.t('You do not have permission to upload files.')
-								: ''}
-						className="w-full"
-					>
-						<button
-							class="flex gap-2 w-full items-center px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-xl {!fileUploadEnabled
-								? 'opacity-50'
-								: ''}"
-							on:click={() => {
-								tab = 'knowledge';
-							}}
-						>
-							<Database />
-
-							<div class="flex items-center w-full justify-between">
-								<div class=" line-clamp-1">
-									{$i18n.t('Attach Knowledge')}
-								</div>
-
-								<div class="text-gray-500">
-									<ChevronRight />
-								</div>
-							</div>
-						</button>
 					</Tooltip>
 
 					{#if ($chats ?? []).length > 0}
@@ -414,26 +325,7 @@
 						{/if}
 					{/if}
 				</div>
-			{:else if tab === 'knowledge'}
-				<div in:fly={{ x: 20, duration: 150 }}>
-					<button
-						class="flex w-full justify-between gap-2 items-center px-3 py-1.5 text-sm cursor-pointer rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/50"
-						on:click={() => {
-							tab = '';
-						}}
-					>
-						<ChevronLeft />
-
-						<div class="flex items-center w-full justify-between">
-							<div>
-								{$i18n.t('Knowledge')}
-							</div>
-						</div>
-					</button>
-
-					<Knowledge {onSelect} />
-				</div>
-			{:else if tab === 'chats'}
+	{:else if tab === 'chats'}
 				<div in:fly={{ x: 20, duration: 150 }}>
 					<button
 						class="flex w-full justify-between gap-2 items-center px-3 py-1.5 text-sm cursor-pointer rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/50"

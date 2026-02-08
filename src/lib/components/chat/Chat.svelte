@@ -18,7 +18,6 @@
 		chatId,
 		chats,
 		config,
-		type Model,
 		models,
 		tags as allTags,
 		settings,
@@ -114,17 +113,11 @@
 	let chatIdUnsubscriber: Unsubscriber | undefined;
 
 	let selectedModels = [''];
-	let atSelectedModel: Model | undefined;
 	let selectedModelIds = [];
-	$: if (atSelectedModel !== undefined) {
-		selectedModelIds = [atSelectedModel.id];
-	} else {
-		selectedModelIds = selectedModels;
-	}
+	$: selectedModelIds = selectedModels;
 
 	let imageGenerationEnabled = false;
 	let webSearchEnabled = false;
-	let showCommands = false;
 
 	let generating = false;
 	let generationController = null;
@@ -243,11 +236,11 @@
 	};
 
 	const setDefaults = async () => {
-		if (selectedModels.length !== 1 && !atSelectedModel) {
+		if (selectedModels.length !== 1) {
 			return;
 		}
 
-		const model = atSelectedModel ?? $models.find((m) => m.id === selectedModels[0]);
+		const model = $models.find((m) => m.id === selectedModels[0]);
 		if (model) {
 			// Set Default Features
 			if (model?.info?.meta?.defaultFeatureIds) {
@@ -1500,9 +1493,7 @@
 		// If modelId is provided, use it, else use selected model
 		let selectedModelIds = modelId
 			? [modelId]
-			: atSelectedModel !== undefined
-				? [atSelectedModel.id]
-				: selectedModels;
+			: selectedModels;
 
 		// Create response messages for each selected model
 		for (const [_modelIdx, modelId] of selectedModelIds.entries()) {
@@ -1621,7 +1612,7 @@
 						: false
 			};
 
-		const currentModels = atSelectedModel?.id ? [atSelectedModel.id] : selectedModels;
+		const currentModels = selectedModels;
 		if (
 			currentModels.filter(
 				(model) => $models.find((m) => m.id === model)?.info?.meta?.capabilities?.web_search ?? true
@@ -1772,7 +1763,7 @@
 						(messages.length == 2 &&
 							messages.at(0)?.role === 'system' &&
 							messages.at(1)?.role === 'user')) &&
-					(selectedModels[0] === model.id || atSelectedModel !== undefined)
+					selectedModels[0] === model.id
 						? {
 								title_generation: $settings?.title?.auto ?? true,
 								tags_generation: $settings?.autoTags ?? true
@@ -2278,7 +2269,6 @@
 											messageInput?.setText(text);
 										}}
 										{selectedModels}
-										{atSelectedModel}
 										{sendMessage}
 										{showMessage}
 										{submitMessage}
@@ -2303,9 +2293,6 @@
 									bind:autoScroll
 									bind:imageGenerationEnabled
 										bind:webSearchEnabled
-									bind:atSelectedModel
-									bind:showCommands
-	
 									{generating}
 									{stopResponse}
 									{createMessagePair}
@@ -2342,9 +2329,6 @@
 									bind:autoScroll
 									bind:imageGenerationEnabled
 										bind:webSearchEnabled
-									bind:atSelectedModel
-									bind:showCommands
-	
 									{stopResponse}
 									{createMessagePair}
 									{onSelect}
