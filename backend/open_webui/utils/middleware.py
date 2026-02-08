@@ -66,7 +66,6 @@ from open_webui.utils.files import (
 
 
 from open_webui.models.users import UserModel
-from open_webui.models.functions import Functions
 from open_webui.models.models import Models
 
 from open_webui.retrieval.utils import get_sources_from_items
@@ -94,11 +93,6 @@ from open_webui.utils.misc import (
 )
 from open_webui.utils.tools import (
     get_updated_tool_function,
-)
-from open_webui.utils.plugin import load_function_module_by_id
-from open_webui.utils.filter import (
-    get_sorted_filter_ids,
-    process_filter_functions,
 )
 from open_webui.utils.payload import apply_system_prompt_to_body
 from open_webui.config import (
@@ -1525,24 +1519,6 @@ async def process_chat_payload(request, form_data, user, metadata, model):
     except Exception as e:
         raise e
 
-    try:
-        filter_functions = [
-            Functions.get_function_by_id(filter_id)
-            for filter_id in get_sorted_filter_ids(
-                request, model, metadata.get("filter_ids", [])
-            )
-        ]
-
-        form_data, flags = await process_filter_functions(
-            request=request,
-            filter_functions=filter_functions,
-            filter_type="inlet",
-            form_data=form_data,
-            extra_params=extra_params,
-        )
-    except Exception as e:
-        raise Exception(f"{e}")
-
     features = form_data.pop("features", None) or {}
     extra_params["__features__"] = features
     if features:
@@ -2127,13 +2103,6 @@ async def process_chat_response(
         "__request__": request,
         "__model__": model,
     }
-    filter_functions = [
-        Functions.get_function_by_id(filter_id)
-        for filter_id in get_sorted_filter_ids(
-            request, model, metadata.get("filter_ids", [])
-        )
-    ]
-
     # Streaming response
     if event_emitter and event_caller:
         task_id = str(uuid4())  # Create a unique task ID.
@@ -2582,14 +2551,6 @@ async def process_chat_response(
 
                         try:
                             data = json.loads(data)
-
-                            data, _ = await process_filter_functions(
-                                request=request,
-                                filter_functions=filter_functions,
-                                filter_type="stream",
-                                form_data=data,
-                                extra_params={"__body__": form_data, **extra_params},
-                            )
 
                             if data:
                                 if "event" in data and not getattr(
@@ -3264,26 +3225,10 @@ async def process_chat_response(
                 return f"data: {item}\n\n"
 
             for event in events:
-                event, _ = await process_filter_functions(
-                    request=request,
-                    filter_functions=filter_functions,
-                    filter_type="stream",
-                    form_data=event,
-                    extra_params=extra_params,
-                )
-
                 if event:
                     yield wrap_item(json.dumps(event))
 
             async for data in original_generator:
-                data, _ = await process_filter_functions(
-                    request=request,
-                    filter_functions=filter_functions,
-                    filter_type="stream",
-                    form_data=data,
-                    extra_params=extra_params,
-                )
-
                 if data:
                     yield data
 

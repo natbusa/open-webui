@@ -60,7 +60,6 @@ export const selectedFolder = writable(null);
 export const models: Writable<Model[]> = writable([]);
 
 export const knowledge: Writable<null | Document[]> = writable(null);
-export const functions = writable(null);
 
 export const banners: Writable<Banner[]> = writable([]);
 

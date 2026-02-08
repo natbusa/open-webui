@@ -6,11 +6,9 @@
 
 	import { config, user, mobile, settings } from '$lib/stores';
 
-	import Knobs from '$lib/components/icons/Knobs.svelte';
 	import Dropdown from '$lib/components/common/Dropdown.svelte';
 	import Tooltip from '$lib/components/common/Tooltip.svelte';
 	import Switch from '$lib/components/common/Switch.svelte';
-	import Sparkles from '$lib/components/icons/Sparkles.svelte';
 	import GlobeAlt from '$lib/components/icons/GlobeAlt.svelte';
 	import Photo from '$lib/components/icons/Photo.svelte';
 
@@ -19,16 +17,11 @@
 	export let selectedModels: string[] = [];
 	export let fileUploadCapableModels: string[] = [];
 
-	export let toggleFilters: { id: string; name: string; description?: string; icon?: string }[] =
-		[];
-	export let selectedFilterIds: string[] = [];
-
 	export let showWebSearchButton = false;
 	export let webSearchEnabled = false;
 	export let showImageGenerationButton = false;
 	export let imageGenerationEnabled = false;
 	export let onClose: Function;
-	export let closeOnOutsideClick = true;
 
 	let show = false;
 
@@ -59,56 +52,6 @@
 			transition={flyAndScale}
 		>
 			<div in:fly={{ x: -20, duration: 150 }}>
-				{#if toggleFilters && toggleFilters.length > 0}
-					{#each toggleFilters.sort( (a, b) => a.name.localeCompare( b.name, undefined, { sensitivity: 'base' } ) ) as filter, filterIdx (filter.id)}
-						<Tooltip content={filter?.description} placement="top-start">
-							<button
-								class="flex w-full justify-between gap-2 items-center px-3 py-1.5 text-sm cursor-pointer rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/50"
-								on:click={() => {
-									if (selectedFilterIds.includes(filter.id)) {
-										selectedFilterIds = selectedFilterIds.filter((id) => id !== filter.id);
-									} else {
-										selectedFilterIds = [...selectedFilterIds, filter.id];
-									}
-								}}
-							>
-								<div class="flex-1 truncate">
-									<div class="flex flex-1 gap-2 items-center">
-										<div class="shrink-0">
-											{#if filter?.icon}
-												<div class="size-4 items-center flex justify-center">
-													<img
-														src={filter.icon}
-														class="size-3.5 {filter.icon.includes('svg')
-															? 'dark:invert-[80%]'
-															: ''}"
-														style="fill: currentColor;"
-														alt={filter.name}
-													/>
-												</div>
-											{:else}
-												<Sparkles className="size-4" strokeWidth="1.75" />
-											{/if}
-										</div>
-
-										<div class=" truncate">{filter?.name}</div>
-									</div>
-								</div>
-
-								<div class=" shrink-0">
-									<Switch
-										state={selectedFilterIds.includes(filter.id)}
-										on:change={async (e) => {
-											const state = e.detail;
-											await tick();
-										}}
-									/>
-								</div>
-							</button>
-						</Tooltip>
-					{/each}
-				{/if}
-
 				{#if showWebSearchButton}
 					<Tooltip content={$i18n.t('Search the internet')} placement="top-start">
 						<button

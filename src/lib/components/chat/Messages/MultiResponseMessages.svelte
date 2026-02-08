@@ -36,7 +36,6 @@
 	export let editMessage: Function;
 	export let saveMessage: Function;
 	export let rateMessage: Function;
-	export let actionMessage: Function;
 
 	export let submitMessage: Function;
 	export let deleteMessage: Function;
@@ -300,7 +299,6 @@
 									{saveMessage}
 									{rateMessage}
 									{deleteMessage}
-									{actionMessage}
 									{submitMessage}
 									regenerateResponse={async (message, prompt = null) => {
 										regenerateResponse(message, prompt);
@@ -355,7 +353,6 @@
 										{saveMessage}
 										{rateMessage}
 										{deleteMessage}
-										{actionMessage}
 										{submitMessage}
 										regenerateResponse={async (message, prompt = null) => {
 											regenerateResponse(message, prompt);

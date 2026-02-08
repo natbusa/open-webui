@@ -81,7 +81,6 @@ from open_webui.routers import (
     configs,
     groups,
     files,
-    functions,
     memories,
     models,
     knowledge,
@@ -102,7 +101,6 @@ from open_webui.routers.retrieval import (
 from sqlalchemy.orm import Session
 from open_webui.internal.db import ScopedSession, engine, get_session
 
-from open_webui.models.functions import Functions
 from open_webui.models.models import Models
 from open_webui.models.users import UserModel, Users
 from open_webui.models.chats import Chats
@@ -480,7 +478,6 @@ from open_webui.utils.models import (
 from open_webui.utils.chat import (
     generate_chat_completion as chat_completion_handler,
     chat_completed as chat_completed_handler,
-    chat_action as chat_action_handler,
 )
 from open_webui.utils.embeddings import generate_embeddings
 from open_webui.utils.middleware import process_chat_payload, process_chat_response
@@ -493,7 +490,7 @@ from open_webui.utils.auth import (
     get_verified_user,
     create_admin_user,
 )
-from open_webui.utils.plugin import install_tool_and_function_dependencies
+from open_webui.utils.plugin import install_tool_dependencies
 from open_webui.utils.oauth import (
     get_oauth_client_info_with_dynamic_client_registration,
     encrypt_data,
@@ -521,7 +518,6 @@ from open_webui.constants import ERROR_MESSAGES
 
 if SAFE_MODE:
     print("SAFE MODE ENABLED")
-    Functions.deactivate_all_functions()
 
 logging.basicConfig(stream=sys.stdout, level=GLOBAL_LOG_LEVEL)
 log = logging.getLogger(__name__)
@@ -575,8 +571,8 @@ async def lifespan(app: FastAPI):
 
     # This should be blocking (sync) so functions are not deactivated on first /get_models calls
     # when the first user lands on the / route.
-    log.info("Installing external dependencies of functions and tools...")
-    install_tool_and_function_dependencies()
+    log.info("Installing external dependencies of tools...")
+    install_tool_dependencies()
 
     app.state.redis = get_redis_connection(
         redis_url=REDIS_URL,
@@ -810,9 +806,6 @@ app.state.USER_COUNT = None
 
 app.state.TOOLS = {}
 app.state.TOOL_CONTENTS = {}
-
-app.state.FUNCTIONS = {}
-app.state.FUNCTION_CONTENTS = {}
 
 ########################################
 #
@@ -1366,7 +1359,6 @@ app.include_router(memories.router, prefix="/api/v1/memories", tags=["memories"]
 app.include_router(folders.router, prefix="/api/v1/folders", tags=["folders"])
 app.include_router(groups.router, prefix="/api/v1/groups", tags=["groups"])
 app.include_router(files.router, prefix="/api/v1/files", tags=["files"])
-app.include_router(functions.router, prefix="/api/v1/functions", tags=["functions"])
 app.include_router(
     evaluations.router, prefix="/api/v1/evaluations", tags=["evaluations"]
 )
@@ -1742,25 +1734,6 @@ async def chat_completed(
             request.state.model = model_item
 
         return await chat_completed_handler(request, form_data, user)
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        )
-
-
-@app.post("/api/chat/actions/{action_id}")
-async def chat_action(
-    request: Request, action_id: str, form_data: dict, user=Depends(get_verified_user)
-):
-    try:
-        model_item = form_data.pop("model_item", {})
-
-        if model_item.get("direct", False):
-            request.state.direct = True
-            request.state.model = model_item
-
-        return await chat_action_handler(request, action_id, form_data, user)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

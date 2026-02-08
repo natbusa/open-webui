@@ -15,7 +15,6 @@ export const DEFAULT_PERMISSIONS = {
 	},
 	chat: {
 		controls: true,
-		valves: true,
 		system_prompt: true,
 		params: true,
 		file_upload: true,

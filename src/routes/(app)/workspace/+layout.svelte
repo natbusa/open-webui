@@ -3,7 +3,6 @@
 	import {
 		WEBUI_NAME,
 		showSidebar,
-		functions,
 		user,
 		mobile,
 		models,

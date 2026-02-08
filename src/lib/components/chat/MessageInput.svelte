@@ -63,8 +63,6 @@
 	import XMark from '../icons/XMark.svelte';
 	import GlobeAlt from '../icons/GlobeAlt.svelte';
 	import Photo from '../icons/Photo.svelte';
-	import Sparkles from '../icons/Sparkles.svelte';
-
 	import InputVariablesModal from './MessageInput/InputVariablesModal.svelte';
 	import Voice from '../icons/Voice.svelte';
 	import Terminal from '../icons/Terminal.svelte';
@@ -72,8 +70,6 @@
 	import Component from '../icons/Component.svelte';
 	import PlusAlt from '../icons/PlusAlt.svelte';
 
-	import Knobs from '../icons/Knobs.svelte';
-	import ValvesModal from '../workspace/common/ValvesModal.svelte';
 	import PageEdit from '../icons/PageEdit.svelte';
 	import { goto } from '$app/navigation';
 	import InputModal from '../common/InputModal.svelte';
@@ -102,23 +98,12 @@
 	export let prompt = '';
 	export let files = [];
 
-	export let selectedFilterIds = [];
-
 	export let imageGenerationEnabled = false;
 	export let webSearchEnabled = false;
 	let showInputVariablesModal = false;
 	let inputVariablesModalCallback = (variableValues) => {};
 	let inputVariables = {};
 	let inputVariableValues = {};
-
-	let showValvesModal = false;
-	let selectedValvesType = 'function';
-	let selectedValvesItemId = null;
-	let integrationsMenuCloseOnOutsideClick = true;
-
-	$: if (!showValvesModal) {
-		integrationsMenuCloseOnOutsideClick = true;
-	}
 
 	$: onChange({
 		prompt,
@@ -131,7 +116,6 @@
 					access_control: undefined
 				};
 			}),
-		selectedFilterIds,
 		imageGenerationEnabled,
 		webSearchEnabled
 	});
@@ -400,11 +384,6 @@
 		(model) =>
 			$models.find((m) => m.id === model)?.info?.meta?.capabilities?.image_generation ?? true
 	);
-
-	let toggleFilters = [];
-	$: toggleFilters = (atSelectedModel?.id ? [atSelectedModel.id] : selectedModels)
-		.map((id) => ($models.find((model) => model.id === id) || {})?.filters ?? [])
-		.reduce((acc, filters) => acc.filter((f1) => filters.some((f2) => f2.id === f1.id)));
 
 	let showWebSearchButton = false;
 	$: showWebSearchButton =
@@ -790,19 +769,6 @@
 	onSave={inputVariablesModalCallback}
 />
 
-<ValvesModal
-	bind:show={showValvesModal}
-	userValves={true}
-	type={selectedValvesType}
-	id={selectedValvesItemId ?? null}
-	on:save={async () => {
-		await tick();
-	}}
-	on:close={() => {
-		integrationsMenuCloseOnOutsideClick = true;
-	}}
-/>
-
 <InputModal
 	bind:show={showInputModal}
 	bind:value={prompt}
@@ -1132,7 +1098,6 @@
 										if (e.key === 'Escape') {
 											console.log('Escape');
 											atSelectedModel = undefined;
-											selectedFilterIds = [];
 
 											webSearchEnabled = false;
 											imageGenerationEnabled = false;
@@ -1240,20 +1205,17 @@
 										</div>
 									</InputMenu>
 
-									{#if showWebSearchButton || showImageGenerationButton || (toggleFilters && toggleFilters.length > 0)}
+									{#if showWebSearchButton || showImageGenerationButton}
 										<div
 											class="flex self-center w-[1px] h-4 mx-1 bg-gray-200/50 dark:bg-gray-800/50"
 										/>
 
 										<IntegrationsMenu
 											selectedModels={atSelectedModel ? [atSelectedModel.id] : selectedModels}
-											{toggleFilters}
 											{showWebSearchButton}
 											{showImageGenerationButton}
-											bind:selectedFilterIds
 											bind:webSearchEnabled
 											bind:imageGenerationEnabled
-											closeOnOutsideClick={integrationsMenuCloseOnOutsideClick}
 											onClose={async () => {
 												await tick();
 
@@ -1270,63 +1232,7 @@
 										</IntegrationsMenu>
 									{/if}
 
-									{#if selectedModelIds.length === 1 && $models.find((m) => m.id === selectedModelIds[0])?.has_user_valves}
-										<div class="ml-1 flex gap-1.5">
-											<Tooltip content={$i18n.t('Valves')} placement="top">
-												<button
-													type="button"
-													id="model-valves-button"
-													class="bg-transparent hover:bg-gray-100 text-gray-700 dark:text-white dark:hover:bg-gray-800 rounded-full size-8 flex justify-center items-center outline-hidden focus:outline-hidden"
-													on:click={() => {
-														selectedValvesType = 'function';
-														selectedValvesItemId = selectedModelIds[0]?.split('.')[0];
-														showValvesModal = true;
-													}}
-												>
-													<Knobs className="size-4" strokeWidth="1.5" />
-												</button>
-											</Tooltip>
-										</div>
-									{/if}
-
 									<div class="ml-1 flex gap-1.5">
-										{#each selectedFilterIds as filterId}
-											{@const filter = toggleFilters.find((f) => f.id === filterId)}
-											{#if filter}
-												<Tooltip content={filter?.name} placement="top">
-													<button
-														on:click|preventDefault={() => {
-															selectedFilterIds = selectedFilterIds.filter((id) => id !== filterId);
-														}}
-														type="button"
-														class="group p-[7px] flex gap-1.5 items-center text-sm rounded-full transition-colors duration-300 focus:outline-hidden max-w-full overflow-hidden {selectedFilterIds.includes(
-															filterId
-														)
-															? 'text-sky-500 dark:text-sky-300 bg-sky-50 hover:bg-sky-100 dark:bg-sky-400/10 dark:hover:bg-sky-600/10 border border-sky-200/40 dark:border-sky-500/20'
-															: 'bg-transparent text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 '} capitalize"
-													>
-														{#if filter?.icon}
-															<div class="size-4 items-center flex justify-center">
-																<img
-																	src={filter.icon}
-																	class="size-3.5 {filter.icon.includes('svg')
-																		? 'dark:invert-[80%]'
-																		: ''}"
-																	style="fill: currentColor;"
-																	alt={filter.name}
-																/>
-															</div>
-														{:else}
-															<Sparkles className="size-4" strokeWidth="1.75" />
-														{/if}
-														<div class="hidden group-hover:block">
-															<XMark className="size-4" strokeWidth="1.75" />
-														</div>
-													</button>
-												</Tooltip>
-											{/if}
-										{/each}
-
 										{#if webSearchEnabled}
 											<Tooltip content={$i18n.t('Web Search')} placement="top">
 												<button

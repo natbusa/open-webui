@@ -34,7 +34,6 @@
 		temporaryChatEnabled,
 		mobile,
 		chatTitle,
-		functions,
 		selectedFolder,
 		pinnedChats
 	} from '$lib/stores';
@@ -67,14 +66,12 @@
 	import {
 		chatCompleted,
 		generateQueries,
-		chatAction,
 		generateMoACompletion,
 		stopTask,
 		getTaskIdsByChatId
 	} from '$lib/apis';
 	import { uploadFile } from '$lib/apis/files';
 	import { createOpenAITextStream } from '$lib/apis/streaming';
-	import { getFunctions } from '$lib/apis/functions';
 	import { updateFolderById } from '$lib/apis/folders';
 
 	import Banner from '../common/Banner.svelte';
@@ -125,7 +122,6 @@
 		selectedModelIds = selectedModels;
 	}
 
-	let selectedFilterIds = [];
 	let imageGenerationEnabled = false;
 	let webSearchEnabled = false;
 	let showCommands = false;
@@ -160,7 +156,6 @@
 		messageInput?.setText('');
 
 		files = [];
-		selectedFilterIds = [];
 		webSearchEnabled = false;
 		imageGenerationEnabled = false;
 
@@ -182,7 +177,6 @@
 					if (!$temporaryChatEnabled) {
 						messageInput?.setText(input.prompt);
 						files = input.files;
-						selectedFilterIds = input.selectedFilterIds;
 						webSearchEnabled = input.webSearchEnabled;
 						imageGenerationEnabled = input.imageGenerationEnabled;
 						}
@@ -240,7 +234,6 @@
 	};
 
 	const resetInput = () => {
-		selectedFilterIds = [];
 		webSearchEnabled = false;
 		imageGenerationEnabled = false;
 
@@ -250,22 +243,12 @@
 	};
 
 	const setDefaults = async () => {
-		if (!$functions) {
-			functions.set(await getFunctions(localStorage.token));
-		}
 		if (selectedModels.length !== 1 && !atSelectedModel) {
 			return;
 		}
 
 		const model = atSelectedModel ?? $models.find((m) => m.id === selectedModels[0]);
 		if (model) {
-			// Set Default Filters (Toggleable only)
-			if (model?.info?.meta?.defaultFilterIds) {
-				selectedFilterIds = model.info.meta.defaultFilterIds.filter((id) =>
-					model?.filters?.find((f) => f.id === id)
-				);
-			}
-
 			// Set Default Features
 			if (model?.info?.meta?.defaultFeatureIds) {
 				if (model.info?.meta?.capabilities?.['image_generation']) {
@@ -528,7 +511,6 @@
 			messageInput?.setText('');
 
 			files = [];
-			selectedFilterIds = [];
 			webSearchEnabled = false;
 			imageGenerationEnabled = false;
 
@@ -538,7 +520,6 @@
 				if (!$temporaryChatEnabled) {
 					messageInput?.setText(input.prompt);
 					files = input.files;
-					selectedFilterIds = input.selectedFilterIds;
 					webSearchEnabled = input.webSearchEnabled;
 					imageGenerationEnabled = input.imageGenerationEnabled;
 				}
@@ -1047,7 +1028,6 @@
 				...(m.usage ? { usage: m.usage } : {}),
 				...(m.sources ? { sources: m.sources } : {})
 			})),
-			filter_ids: selectedFilterIds.length > 0 ? selectedFilterIds : undefined,
 			model_item: $models.find((m) => m.id === modelId),
 			chat_id: _chatId,
 			session_id: $socket?.id,
@@ -1093,59 +1073,6 @@
 		}
 
 		taskIds = null;
-	};
-
-	const chatActionHandler = async (_chatId, actionId, modelId, responseMessageId, event = null) => {
-		const messages = createMessagesList(history, responseMessageId);
-
-		const res = await chatAction(localStorage.token, actionId, {
-			model: modelId,
-			messages: messages.map((m) => ({
-				id: m.id,
-				role: m.role,
-				content: m.content,
-				info: m.info ? m.info : undefined,
-				timestamp: m.timestamp,
-				...(m.sources ? { sources: m.sources } : {})
-			})),
-			...(event ? { event: event } : {}),
-			model_item: $models.find((m) => m.id === modelId),
-			chat_id: _chatId,
-			session_id: $socket?.id,
-			id: responseMessageId
-		}).catch((error) => {
-			toast.error(`${error}`);
-			messages.at(-1).error = { content: error };
-			return null;
-		});
-
-		if (res !== null && res.messages) {
-			// Update chat history with the new messages
-			for (const message of res.messages) {
-				history.messages[message.id] = {
-					...history.messages[message.id],
-					...(history.messages[message.id].content !== message.content
-						? { originalContent: history.messages[message.id].content }
-						: {}),
-					...message
-				};
-			}
-		}
-
-		if ($chatId == _chatId) {
-			if (!$temporaryChatEnabled) {
-				chat = await updateChatById(localStorage.token, _chatId, {
-					models: selectedModels,
-					messages: messages,
-					history: history,
-					params: params,
-					files: chatFiles
-				});
-
-				currentChatPage.set(1);
-				await chats.set(await getChatList(localStorage.token, $currentChatPage));
-			}
-		}
 	};
 
 	const getChatEventEmitter = async (modelId: string, chatId: string = '') => {
@@ -1826,7 +1753,6 @@
 
 				files: (files?.length ?? 0) > 0 ? files : undefined,
 
-				filter_ids: selectedFilterIds.length > 0 ? selectedFilterIds : undefined,
 				features: getFeatures(),
 				variables: {
 					...getPromptVariables($user?.name, $settings?.userLocation ? userLocation : undefined)
@@ -2358,7 +2284,6 @@
 										{submitMessage}
 										{regenerateResponse}
 										{mergeResponses}
-										{chatActionHandler}
 										{addMessages}
 										topPadding={true}
 										bottomPadding={files.length > 0}
@@ -2376,8 +2301,6 @@
 									bind:files
 									bind:prompt
 									bind:autoScroll
-	
-									bind:selectedFilterIds
 									bind:imageGenerationEnabled
 										bind:webSearchEnabled
 									bind:atSelectedModel
@@ -2417,8 +2340,6 @@
 									bind:files
 									bind:prompt
 									bind:autoScroll
-	
-									bind:selectedFilterIds
 									bind:imageGenerationEnabled
 										bind:webSearchEnabled
 									bind:atSelectedModel

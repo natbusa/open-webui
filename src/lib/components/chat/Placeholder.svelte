@@ -46,7 +46,6 @@
 	export let messageInput = null;
 
 	export let selectedToolIds = [];
-	export let selectedFilterIds = [];
 
 	export let showCommands = false;
 
@@ -203,7 +202,6 @@
 					bind:prompt
 					bind:autoScroll
 					bind:selectedToolIds
-					bind:selectedFilterIds
 					bind:imageGenerationEnabled
 					bind:webSearchEnabled
 					bind:atSelectedModel

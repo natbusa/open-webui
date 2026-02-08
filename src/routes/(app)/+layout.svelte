@@ -22,7 +22,6 @@
 		settings,
 		models,
 		knowledge,
-		functions,
 		tags,
 		banners,
 		showSettings,
