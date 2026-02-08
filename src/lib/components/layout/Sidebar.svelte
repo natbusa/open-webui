@@ -51,7 +51,6 @@
 	import Folder from '../common/Folder.svelte';
 	import Tooltip from '../common/Tooltip.svelte';
 	import Folders from './Sidebar/Folders.svelte';
-	import PencilSquare from '../icons/PencilSquare.svelte';
 	import Search from '../icons/Search.svelte';
 	import SearchModal from './SearchModal.svelte';
 	import FolderModal from './Sidebar/Folders/FolderModal.svelte';
@@ -490,23 +489,6 @@
 		dropZone?.removeEventListener('dragleave', onDragLeave);
 	});
 
-	const newChatHandler = async () => {
-		selectedChatId = null;
-		selectedFolder.set(null);
-
-		if ($user?.role !== 'admin' && $user?.permissions?.chat?.temporary_enforced) {
-			await temporaryChatEnabled.set(true);
-		} else {
-			await temporaryChatEnabled.set(false);
-		}
-
-		setTimeout(() => {
-			if ($mobile) {
-				showSidebar.set(false);
-			}
-		}, 0);
-	};
-
 	const itemClickHandler = async () => {
 		selectedChatId = null;
 		chatId.set('');
@@ -558,14 +540,6 @@
 	}}
 />
 
-<button
-	id="sidebar-new-chat-button"
-	class="hidden"
-	on:click={() => {
-		goto('/c');
-		newChatHandler();
-	}}
-/>
 
 <svelte:window
 	on:mousemove={(e) => {
@@ -613,30 +587,6 @@
 			</div>
 
 			<div class="-mt-[0.5px]">
-				{#if $settings?.activeModel}
-					<div class="">
-						<Tooltip content={$i18n.t('New Chat')} placement="right">
-							<a
-								class=" cursor-pointer flex rounded-xl hover:bg-gray-100 dark:hover:bg-gray-850 transition group"
-								href="/c"
-								draggable="false"
-								on:click={async (e) => {
-									e.stopImmediatePropagation();
-									e.preventDefault();
-
-									goto('/c');
-									newChatHandler();
-								}}
-								aria-label={$i18n.t('New Chat')}
-							>
-								<div class=" self-center flex items-center justify-center size-9">
-									<PencilSquare className="size-4.5" />
-								</div>
-							</a>
-						</Tooltip>
-					</div>
-				{/if}
-
 				<div>
 					<Tooltip content={$i18n.t('Search')} placement="right">
 						<button
@@ -861,29 +811,6 @@
 				}}
 			>
 				<div class="pb-1.5">
-					{#if $settings?.activeModel}
-						<div class="px-[0.4375rem] flex justify-center text-gray-800 dark:text-gray-200">
-							<a
-								id="sidebar-new-chat-button"
-								class="group grow flex items-center space-x-3 rounded-2xl px-2.5 py-2 hover:bg-gray-100 dark:hover:bg-gray-900 transition outline-none"
-								href="/c"
-								draggable="false"
-								on:click={newChatHandler}
-								aria-label={$i18n.t('New Chat')}
-							>
-								<div class="self-center">
-									<PencilSquare className=" size-4.5" strokeWidth="2" />
-								</div>
-
-								<div class="flex flex-1 self-center translate-y-[0.5px]">
-									<div class=" self-center text-sm font-primary">{$i18n.t('New Chat')}</div>
-								</div>
-
-								<HotkeyHint name="newChat" className=" group-hover:visible invisible" />
-							</a>
-						</div>
-					{/if}
-
 					<div class="px-[0.4375rem] flex justify-center text-gray-800 dark:text-gray-200">
 						<button
 							id="sidebar-search-button"

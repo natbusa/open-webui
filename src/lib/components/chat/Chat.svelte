@@ -768,13 +768,19 @@
 			await temporaryChatEnabled.set(false);
 		}
 
+		// Redirect to workspace/models if no model available
+		if (!$page.url.searchParams.get('models') && !$page.url.searchParams.get('model') && !$settings?.activeModel) {
+			await goto('/workspace/models');
+			return;
+		}
+
 		const availableModels = $models
 			.filter((m) => !(m?.info?.meta?.hidden ?? false))
 			.map((m) => m.id);
 
 		const defaultModels = $config?.default_models ? $config?.default_models.split(',') : [];
 
-		// Single model selection: URL param → folder model → session storage → activeModel → default → first available
+		// Single model selection: URL param
 		if ($page.url.searchParams.get('models') || $page.url.searchParams.get('model')) {
 			const urlModel = (
 				$page.url.searchParams.get('models') ||
@@ -2080,7 +2086,6 @@
 						title={$chatTitle}
 						activeModelId={selectedModels[0] ?? ''}
 						shareEnabled={!!history.currentId}
-						{initNewChat}
 						archiveChatHandler={() => {}}
 						{moveChatHandler}
 						onSaveTempChat={async () => {

@@ -13,8 +13,6 @@ type ShortcutRegistry = {
 
 export enum Shortcut {
 	//Chat
-	NEW_CHAT = 'newChat',
-	NEW_TEMPORARY_CHAT = 'newTemporaryChat',
 	DELETE_CHAT = 'deleteChat',
 
 	//Global
@@ -43,16 +41,6 @@ export enum Shortcut {
 
 export const shortcuts: ShortcutRegistry = {
 	//Chat
-	[Shortcut.NEW_CHAT]: {
-		name: 'New Chat',
-		keys: ['mod', 'shift', 'O'],
-		category: 'Chat'
-	},
-	[Shortcut.NEW_TEMPORARY_CHAT]: {
-		name: 'New Temporary Chat',
-		keys: ['mod', 'shift', `'`],
-		category: 'Chat'
-	},
 	[Shortcut.DELETE_CHAT]: {
 		name: 'Delete Chat',
 		keys: ['mod', 'shift', 'Backspace', 'Delete'],

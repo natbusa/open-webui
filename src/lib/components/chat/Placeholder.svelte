@@ -93,7 +93,7 @@
 				<MessageInput
 					bind:this={messageInput}
 					{history}
-					selectedModels={activeModelId}
+					selectedModels={[activeModelId]}
 					bind:files
 					bind:prompt
 					bind:autoScroll

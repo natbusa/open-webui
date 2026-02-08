@@ -166,10 +166,6 @@
 					console.log('Shortcut triggered: SEARCH');
 					event.preventDefault();
 					showSearch.set(!$showSearch);
-				} else if (isShortcutMatch(event, shortcuts[Shortcut.NEW_CHAT])) {
-					console.log('Shortcut triggered: NEW_CHAT');
-					event.preventDefault();
-					document.getElementById('sidebar-new-chat-button')?.click();
 				} else if (isShortcutMatch(event, shortcuts[Shortcut.FOCUS_INPUT])) {
 					console.log('Shortcut triggered: FOCUS_INPUT');
 					event.preventDefault();
@@ -203,18 +199,6 @@
 					event.preventDefault();
 					showSettings.set(false);
 					showShortcuts.set(false);
-				} else if (isShortcutMatch(event, shortcuts[Shortcut.NEW_TEMPORARY_CHAT])) {
-					console.log('Shortcut triggered: NEW_TEMPORARY_CHAT');
-					event.preventDefault();
-					if ($user?.role !== 'admin' && $user?.permissions?.chat?.temporary_enforced) {
-						temporaryChatEnabled.set(true);
-					} else {
-						temporaryChatEnabled.set(!$temporaryChatEnabled);
-					}
-					await goto('/c');
-					setTimeout(() => {
-						document.getElementById('new-chat-button')?.click();
-					}, 0);
 				} else if (isShortcutMatch(event, shortcuts[Shortcut.GENERATE_MESSAGE_PAIR])) {
 					console.log('Shortcut triggered: GENERATE_MESSAGE_PAIR');
 					event.preventDefault();
