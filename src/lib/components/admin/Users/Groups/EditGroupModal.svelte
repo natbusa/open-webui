@@ -31,8 +31,6 @@
 	let loading = false;
 	let showDeleteConfirmDialog = false;
 
-	let userCount = 0;
-
 	export let name = '';
 	export let description = '';
 	export let data = {};
@@ -70,8 +68,7 @@
 			};
 			data = group?.data ?? {};
 
-			userCount = group?.member_count ?? 0;
-		}
+}
 	};
 
 	$: if (show) {
@@ -211,7 +208,7 @@
 								{:else if selectedTab == 'permissions'}
 									<Permissions bind:permissions {defaultPermissions} />
 								{:else if selectedTab == 'users'}
-									<Users bind:userCount groupId={group?.id} />
+									<Users groupId={group?.id} />
 								{/if}
 							</div>
 

@@ -616,6 +616,7 @@
 						<div>
 							<Tooltip content="Update All Models" placement="top">
 								<button
+									aria-label="Update All Models"
 									class="flex gap-2 items-center bg-transparent rounded-lg transition"
 									on:click={() => {
 										updateModelsHandler();
@@ -720,6 +721,7 @@
 
 							<Tooltip content={$i18n.t('Cancel')}>
 								<button
+									aria-label="Cancel"
 									class="text-gray-800 dark:text-gray-100"
 									on:click={() => {
 										cancelUpdateModelHandler(updateModelId);
@@ -768,6 +770,7 @@
 
 											<Tooltip content={$i18n.t('Cancel')}>
 												<button
+													aria-label="Cancel"
 													class="text-gray-800 dark:text-gray-100"
 													on:click={() => {
 														cancelModelPullHandler(model);
@@ -827,6 +830,7 @@
 						</div>
 						<Tooltip content={$i18n.t('Delete Model')} placement="top">
 							<button
+								aria-label="Delete Model"
 								class="px-2.5 bg-gray-50 hover:bg-gray-200 text-gray-800 dark:bg-gray-850 dark:hover:bg-gray-800 dark:text-gray-100 rounded-lg transition"
 								on:click={() => {
 									showModelDeleteConfirm = true;
@@ -869,13 +873,14 @@
 								rows="6"
 								placeholder={`e.g. {"model": "my-modelfile", "from": "ollama:7b"})`}
 								disabled={createModelLoading}
-							/>
+							></textarea>
 						</div>
 
 						<div class="flex self-start">
 							<Tooltip content={$i18n.t('Create Model')} placement="top">
 								<button
 									class="px-2.5 py-2.5 bg-gray-50 hover:bg-gray-200 text-gray-800 dark:bg-gray-850 dark:hover:bg-gray-800 dark:text-gray-100 rounded-lg transition disabled:cursor-not-allowed"
+									aria-label="Create Model"
 									on:click={() => {
 										createModelHandler();
 									}}
@@ -1080,7 +1085,7 @@
 										bind:value={modelFileContent}
 										class="w-full rounded-lg py-2 px-4 text-sm bg-gray-50 dark:text-gray-100 dark:bg-gray-850 outline-hidden resize-none"
 										rows="6"
-									/>
+									></textarea>
 								</div>
 							</div>
 						{/if}

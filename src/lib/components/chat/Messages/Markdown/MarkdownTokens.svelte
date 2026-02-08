@@ -26,7 +26,6 @@
 	export let id: string;
 	export let tokens: Token[];
 	export let top = true;
-	export let attributes = {};
 	export let sourceIds = [];
 
 	export let done = true;

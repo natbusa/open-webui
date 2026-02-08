@@ -119,6 +119,8 @@
 		{:else}
 			<div
 				class="{buttonClassName} cursor-pointer"
+				role="button"
+				tabindex="0"
 				on:pointerup={() => {
 					if (!disabled) {
 						open = !open;
