@@ -7,7 +7,7 @@
 	import { fade } from 'svelte/transition';
 	const i18n: Writable<i18nType> = getContext('i18n');
 
-	import { goto } from '$app/navigation';
+	import { goto, replaceState } from '$app/navigation';
 	import { page } from '$app/stores';
 
 	import { get, type Unsubscriber, type Writable } from 'svelte/store';
@@ -826,7 +826,7 @@
 		await showCallOverlay.set(false);
 
 		if ($page.url.pathname.includes('/c/')) {
-			window.history.replaceState(history.state, '', `/c`);
+			replaceState(`/c`, {});
 		}
 
 		autoScroll = true;
@@ -1927,7 +1927,7 @@
 			_chatId = chat.id;
 			await chatId.set(_chatId);
 
-			window.history.replaceState(history.state, '', `/c/${_chatId}`);
+			replaceState(`/c/${_chatId}`, {});
 
 			await tick();
 
