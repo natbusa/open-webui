@@ -9,6 +9,7 @@
 
 	const i18n = getContext<Writable<i18nType>>('i18n');
 
+	import { createNewFeedback, updateFeedbackById } from '$lib/apis/evaluations';
 	import { getChatById } from '$lib/apis/chats';
 
 	import {
@@ -384,6 +385,59 @@
 				...(rating !== null ? { rating: rating } : {})
 			}
 		};
+
+		const chat = await getChatById(localStorage.token, chatId).catch((error) => {
+			toast.error(`${error}`);
+		});
+		if (!chat) {
+			feedbackLoading = false;
+			return;
+		}
+
+		const messages = createMessagesList(history, message.id);
+
+		let feedbackItem = {
+			type: 'rating',
+			data: {
+				...(updatedMessage?.annotation ? updatedMessage.annotation : {}),
+				model_id: message.model
+			},
+			meta: {
+				model_id: message.model,
+				message_id: message.id,
+				message_index: messages.length,
+				chat_id: chatId
+			},
+			snapshot: {
+				chat: chat
+			}
+		};
+
+		const model = $models.find((m) => m.id === message.model);
+		if (model) {
+			feedbackItem.meta.base_models = {
+				[model.id]: model?.info?.base_model_id ?? null
+			};
+		}
+
+		let feedback = null;
+		if (message?.feedbackId) {
+			feedback = await updateFeedbackById(
+				localStorage.token,
+				message.feedbackId,
+				feedbackItem
+			).catch((error) => {
+				toast.error(`${error}`);
+			});
+		} else {
+			feedback = await createNewFeedback(localStorage.token, feedbackItem).catch((error) => {
+				toast.error(`${error}`);
+			});
+
+			if (feedback) {
+				updatedMessage.feedbackId = feedback.id;
+			}
+		}
 
 		saveMessage(message.id, updatedMessage);
 
