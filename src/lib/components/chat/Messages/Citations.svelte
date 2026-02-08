@@ -5,10 +5,8 @@
 	const i18n = getContext('i18n');
 
 	export let id = '';
-	export let chatId = '';
 
 	export let sources = [];
-	export let readOnly = false;
 
 	let citations = [];
 	let showPercentage = false;

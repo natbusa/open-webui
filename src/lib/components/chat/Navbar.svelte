@@ -38,7 +38,6 @@
 	const i18n = getContext('i18n');
 
 	export let shareEnabled: boolean = false;
-	export let scrollTop = 0;
 
 	export let chat;
 	export let history;

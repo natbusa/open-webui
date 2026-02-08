@@ -124,4 +124,4 @@
 	on:paste={(e) => {
 		dispatch('paste', e);
 	}}
-/>
+></textarea>

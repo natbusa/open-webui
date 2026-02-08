@@ -434,7 +434,7 @@
                     
                     inline-block h-full"
 						style="height: {Math.min(100, Math.max(14, rms * 100))}%;"
-					/>
+					></div>
 				</div>
 			{/each}
 		</div>
@@ -549,6 +549,7 @@
 				<button
 					type="button"
 					class="p-1.5 bg-indigo-500 text-white dark:bg-indigo-500 dark:text-blue-950 rounded-full"
+					aria-label="Confirm recording"
 					on:click={async () => {
 						await confirmRecording();
 					}}

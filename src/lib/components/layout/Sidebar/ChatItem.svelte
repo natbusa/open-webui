@@ -548,6 +548,7 @@
 					<button
 						id="delete-chat-button"
 						class="hidden"
+						aria-label="Delete chat"
 						on:click={() => {
 							showDeleteConfirm = true;
 						}}

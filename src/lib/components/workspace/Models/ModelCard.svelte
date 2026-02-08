@@ -118,7 +118,6 @@
 											</Tooltip>
 										{:else}
 											<ModelMenu
-												user={$user}
 												{model}
 												editHandler={() => {
 													goto(

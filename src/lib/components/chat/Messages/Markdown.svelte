@@ -16,7 +16,6 @@
 	export let done = true;
 	export let model = null;
 	export let save = false;
-	export let preview = false;
 
 	export let paragraphTag = 'p';
 	export let editCodeBlock = true;
@@ -58,7 +57,6 @@
 		{id}
 		{done}
 		{save}
-		{preview}
 		{paragraphTag}
 		{editCodeBlock}
 		{sourceIds}

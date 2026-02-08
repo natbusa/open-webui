@@ -29,7 +29,6 @@
 	export let chatId = '';
 	export let user = $_user;
 
-	export let prompt;
 	export let history = {};
 	export let selectedModels;
 
@@ -441,12 +440,10 @@
 								{updateChat}
 								{editMessage}
 								{deleteMessage}
-								{rateMessage}
 								{saveMessage}
 								{submitMessage}
 								{regenerateResponse}
 								{addMessages}
-								{triggerScroll}
 								{readOnly}
 								{editCodeBlock}
 								{topPadding}
@@ -454,9 +451,9 @@
 						{/each}
 					</ul>
 				</section>
-				<div class="pb-18" />
+				<div class="pb-18"></div>
 				{#if bottomPadding}
-					<div class="  pb-6" />
+					<div class="  pb-6"></div>
 				{/if}
 			{/key}
 		</div>

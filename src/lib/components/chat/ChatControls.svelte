@@ -12,9 +12,6 @@
 	import Controls from './Controls/Controls.svelte';
 	import CallOverlay from './MessageInput/CallOverlay.svelte';
 	import Drawer from '../common/Drawer.svelte';
-	export let history;
-	export let models = [];
-
 	export let chatId = null;
 
 	export let chatFiles = [];
@@ -23,7 +20,6 @@
 	export let eventTarget: EventTarget;
 	export let submitPrompt: Function;
 	export let stopResponse: Function;
-	export let showMessage: Function;
 	export let files;
 	export let modelId;
 
@@ -175,7 +171,6 @@
 						on:close={() => {
 							showControls.set(false);
 						}}
-						{models}
 						bind:chatFiles
 						bind:params
 					/>
@@ -193,7 +188,7 @@
 		>
 			<div
 				class=" absolute -left-1.5 -right-1.5 -top-0 -bottom-0 z-20 cursor-col-resize bg-transparent"
-			/>
+			></div>
 		</PaneResizer>
 	{/if}
 
@@ -246,7 +241,6 @@
 							on:close={() => {
 								showControls.set(false);
 							}}
-							{models}
 							bind:chatFiles
 							bind:params
 						/>

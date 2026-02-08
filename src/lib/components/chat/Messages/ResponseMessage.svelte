@@ -117,7 +117,6 @@
 	export let updateChat: Function;
 	export let editMessage: Function;
 	export let saveMessage: Function;
-	export let rateMessage: Function;
 	export let deleteMessage: Function;
 
 	export let submitMessage: Function;
@@ -589,7 +588,7 @@
 											document.getElementById('confirm-edit-message-button')?.click();
 										}
 									}}
-								/>
+								></textarea>
 
 								<div class=" mt-2 mb-1 flex justify-between text-sm font-medium">
 									<div>
@@ -650,7 +649,6 @@
 										!readOnly &&
 										($settings?.showFloatingActionButtons ?? true)}
 									save={!readOnly}
-									preview={!readOnly}
 									{editCodeBlock}
 									{topPadding}
 									done={($settings?.chatFadeStreamingText ?? true)
@@ -688,9 +686,7 @@
 								<Citations
 									bind:this={citationsElement}
 									id={message?.id}
-									{chatId}
 									sources={message?.sources ?? message?.citations}
-									{readOnly}
 								/>
 							{/if}
 
@@ -1068,10 +1064,11 @@
 											<button
 												type="button"
 												class="hidden regenerate-response-button"
+												aria-label="Regenerate response"
 												on:click={() => {
 													regenerateResponse(message);
 												}}
-											/>
+											></button>
 
 											<RegenerateMenu
 												onRegenerate={(prompt = null) => {

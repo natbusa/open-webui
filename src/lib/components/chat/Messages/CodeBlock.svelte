@@ -26,13 +26,11 @@
 	export let onUpdate = (e) => {};
 
 	export let save = false;
-	export let run = true;
 	export let collapsed = false;
 
 	export let token;
 	export let lang = '';
 	export let code = '';
-	export let attributes = {};
 
 	export let className = '';
 	export let editorClassName = '';
@@ -236,7 +234,7 @@
 				<div
 					id="plt-canvas-{id}"
 					class="bg-gray-50 dark:bg-black dark:text-white max-w-full overflow-x-auto scrollbar-hidden"
-				/>
+				></div>
 			{/if}
 		{/if}
 	</div>

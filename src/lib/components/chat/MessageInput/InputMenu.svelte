@@ -30,7 +30,6 @@
 	export let selectedModels: string[] = [];
 	export let fileUploadCapableModels: string[] = [];
 
-	export let screenCaptureHandler: Function;
 	export let uploadFilesHandler: Function;
 	export let inputFilesHandler: Function;
 

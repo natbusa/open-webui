@@ -28,13 +28,11 @@
 	export let editMessage;
 	export let saveMessage;
 	export let deleteMessage;
-	export let rateMessage;
 	export let submitMessage;
 
 	export let regenerateResponse;
 
 	export let addMessages;
-	export let triggerScroll;
 	export let readOnly = false;
 	export let editCodeBlock = true;
 	export let topPadding = false;
@@ -82,7 +80,6 @@
 				{updateChat}
 				{editMessage}
 				{saveMessage}
-				{rateMessage}
 				{submitMessage}
 				{deleteMessage}
 				{regenerateResponse}

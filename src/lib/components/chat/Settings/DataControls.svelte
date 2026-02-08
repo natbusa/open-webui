@@ -27,8 +27,6 @@
 
 	const i18n = getContext('i18n');
 
-	export let saveSettings: Function;
-
 	// Chats
 	let importFiles;
 
@@ -247,6 +245,7 @@
 					<div class="flex space-x-1.5 items-center">
 						<button
 							class="hover:text-white transition"
+							aria-label={$i18n.t('Confirm archive all chats')}
 							on:click={() => {
 								archiveAllChatsHandler();
 								showArchiveConfirm = false;
@@ -267,6 +266,7 @@
 						</button>
 						<button
 							class="hover:text-white transition"
+							aria-label={$i18n.t('Cancel archive all chats')}
 							on:click={() => {
 								showArchiveConfirm = false;
 							}}
@@ -334,6 +334,7 @@
 					<div class="flex space-x-1.5 items-center">
 						<button
 							class="hover:text-white transition"
+							aria-label={$i18n.t('Confirm delete all chats')}
 							on:click={() => {
 								deleteAllChatsHandler();
 								showDeleteConfirm = false;
@@ -354,6 +355,7 @@
 						</button>
 						<button
 							class="hover:text-white transition"
+							aria-label={$i18n.t('Cancel delete all chats')}
 							on:click={() => {
 								showDeleteConfirm = false;
 							}}

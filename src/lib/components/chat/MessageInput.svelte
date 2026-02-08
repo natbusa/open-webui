@@ -762,6 +762,7 @@
 						>
 							<button
 								class=" bg-white border border-gray-100 dark:border-none dark:bg-white/20 p-1.5 rounded-full pointer-events-auto"
+								aria-label="Scroll to bottom"
 								on:click={() => {
 									autoScroll = true;
 									scrollToBottom();
@@ -846,8 +847,9 @@
 						<button
 							id="generate-message-pair-button"
 							class="hidden"
+							aria-label="Generate message pair"
 							on:click={() => createMessagePair(prompt)}
-						/>
+						></button>
 
 						<div
 							id="message-input-container"
@@ -1083,7 +1085,6 @@
 										bind:files
 										selectedModels={selectedModels}
 										{fileUploadCapableModels}
-										{screenCaptureHandler}
 										{inputFilesHandler}
 										uploadFilesHandler={() => {
 											filesInputElement.click();
@@ -1142,7 +1143,7 @@
 									{#if showWebSearchButton || showImageGenerationButton}
 										<div
 											class="flex self-center w-[1px] h-4 mx-1 bg-gray-200/50 dark:bg-gray-800/50"
-										/>
+										></div>
 
 										<IntegrationsMenu
 											selectedModels={selectedModels}
@@ -1212,6 +1213,7 @@
 											<Tooltip content={$i18n.t('Stop')}>
 												<button
 													class="bg-white hover:bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-800 transition rounded-full p-1.5"
+													aria-label="Stop response"
 													on:click={() => {
 														stopResponse();
 													}}
@@ -1349,6 +1351,7 @@
 															? 'bg-black text-white hover:bg-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-100 '
 															: 'text-white bg-gray-200 dark:text-gray-900 dark:bg-gray-700 disabled'} transition rounded-full p-1.5 self-center"
 														type="submit"
+														aria-label="Send message"
 														disabled={prompt === '' && files.length === 0}
 													>
 														<svg
@@ -1377,7 +1380,7 @@
 								{@html DOMPurify.sanitize(marked($config?.license_metadata?.input_footer))}
 							</div>
 						{:else}
-							<div class="mb-1" />
+							<div class="mb-1"></div>
 						{/if}
 					</form>
 				</div>

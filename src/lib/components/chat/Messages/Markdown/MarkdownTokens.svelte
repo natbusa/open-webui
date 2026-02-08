@@ -32,7 +32,6 @@
 	export let done = true;
 
 	export let save = false;
-	export let preview = false;
 
 	export let paragraphTag = 'p';
 
@@ -108,8 +107,7 @@
 				{token}
 				lang={token?.lang ?? ''}
 				code={token?.text ?? ''}
-				{attributes}
-				{save}
+					{save}
 				edit={editCodeBlock}
 				stickyButtonsClassName={topPadding ? 'top-10' : 'top-0'}
 				onSave={(value) => {
@@ -213,7 +211,7 @@
 	{:else if token.type === 'blockquote'}
 		{@const alert = alertComponent(token)}
 		{#if alert}
-			<AlertRenderer {token} {alert} />
+			<AlertRenderer {alert} />
 		{:else}
 			<blockquote dir="auto">
 				<svelte:self
@@ -334,7 +332,7 @@
 			</div>
 		</Collapsible>
 	{:else if token.type === 'html'}
-		<HtmlToken {id} {token} {onSourceClick} />
+		<HtmlToken {token} {onSourceClick} />
 	{:else if token.type === 'iframe'}
 		<iframe
 			src="{WEBUI_BASE_URL}/api/v1/files/{token.fileId}/content"
@@ -405,7 +403,7 @@
 			<KatexRenderer content={token.text} displayMode={token?.displayMode ?? false} />
 		{/if}
 	{:else if token.type === 'space'}
-		<div class="my-2" />
+		<div class="my-2"></div>
 	{:else}
 		{console.log('Unknown token', token)}
 	{/if}

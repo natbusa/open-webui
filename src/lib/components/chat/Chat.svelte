@@ -7,7 +7,7 @@
 	import { fade } from 'svelte/transition';
 	const i18n: Writable<i18nType> = getContext('i18n');
 
-	import { goto, replaceState } from '$app/navigation';
+	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 
 	import { get, type Unsubscriber, type Writable } from 'svelte/store';
@@ -826,7 +826,7 @@
 		await showCallOverlay.set(false);
 
 		if ($page.url.pathname.includes('/c/')) {
-			replaceState(`/c`, {});
+			window.history.replaceState({}, '', `/c`);
 		}
 
 		autoScroll = true;
@@ -1927,7 +1927,7 @@
 			_chatId = chat.id;
 			await chatId.set(_chatId);
 
-			replaceState(`/c/${_chatId}`, {});
+			window.history.replaceState({}, '', `/c/${_chatId}`);
 
 			await tick();
 
@@ -2143,7 +2143,6 @@
 										chatId={$chatId}
 										bind:history
 										bind:autoScroll
-										bind:prompt
 										setInputText={(text) => {
 											messageInput?.setText(text);
 										}}
@@ -2231,23 +2230,14 @@
 
 				<ChatControls
 					bind:this={controlPaneComponent}
-					bind:history
 					bind:chatFiles
 					bind:params
 					bind:files
 					bind:pane={controlPane}
 					chatId={$chatId}
 					modelId={selectedModelIds?.at(0) ?? null}
-					models={selectedModelIds.reduce((a, e, i, arr) => {
-						const model = $models.find((m) => m.id === e);
-						if (model) {
-							return [...a, model];
-						}
-						return a;
-					}, [])}
 					{submitPrompt}
 					{stopResponse}
-					{showMessage}
 					{eventTarget}
 				/>
 			</PaneGroup>
