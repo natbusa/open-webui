@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { getContext } from 'svelte';
 	import CitationModal from './Citations/CitationModal.svelte';
+	import ImagePreviewModal from './Citations/ImagePreviewModal.svelte';
+	import { WEBUI_API_BASE_URL } from '$lib/constants';
 
 	const i18n = getContext('i18n');
 
@@ -18,6 +20,10 @@
 	let showCitationModal = false;
 
 	let selectedCitation: any = null;
+
+	let showImagePreview = false;
+	let previewImageSrc = '';
+	let previewImageAlt = '';
 
 	export const showSourceModal = (sourceId) => {
 		let index;
@@ -94,13 +100,20 @@
 					existingSource.document.push(document);
 					existingSource.metadata.push(metadata);
 					if (distance !== undefined) existingSource.distances.push(distance);
+					// Merge images from additional sources, deduplicating by image_file_id
+					for (const img of source?.images ?? []) {
+						if (!existingSource.images.some((e) => e.image_file_id === img.image_file_id)) {
+							existingSource.images.push(img);
+						}
+					}
 				} else {
 					acc.push({
 						id: id,
 						source: _source,
 						document: [document],
 						metadata: metadata ? [metadata] : [],
-						distances: distance !== undefined ? [distance] : []
+						distances: distance !== undefined ? [distance] : [],
+						images: source?.images ?? []
 					});
 				}
 			});
@@ -128,6 +141,8 @@
 	{showPercentage}
 	{showRelevance}
 />
+
+<ImagePreviewModal bind:show={showImagePreview} src={previewImageSrc} alt={previewImageAlt} />
 
 {#if citations.length > 0}
 	{@const urlCitations = citations.filter((c) => c?.source?.name?.startsWith('http'))}
@@ -160,6 +175,32 @@
 			</div>
 		</button>
 	</div>
+
+	{@const allImages = citations
+		.flatMap((c) => c.images ?? [])
+		.filter(
+			(img, idx, arr) => arr.findIndex((i) => i.image_file_id === img.image_file_id) === idx
+		)}
+	{#if allImages.length > 0}
+		<div class="flex gap-2 flex-wrap mt-1">
+			{#each allImages as image}
+				<button
+					class="cursor-pointer"
+					on:click={() => {
+						previewImageSrc = `${WEBUI_API_BASE_URL}/files/${image.image_file_id}/content`;
+						previewImageAlt = image.filename;
+						showImagePreview = true;
+					}}
+				>
+					<img
+						src={`${WEBUI_API_BASE_URL}/files/${image.image_file_id}/content`}
+						alt={image.filename}
+						class="h-24 rounded-lg border dark:border-gray-700 hover:opacity-80 transition object-cover"
+					/>
+				</button>
+			{/each}
+		</div>
+	{/if}
 {/if}
 
 {#if showCitations}

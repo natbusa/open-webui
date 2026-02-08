@@ -31,8 +31,12 @@
 		resetKnowledgeById,
 		updateFileFromKnowledgeById,
 		updateKnowledgeById,
-		searchKnowledgeFilesById
+		searchKnowledgeFilesById,
+		addImageToDocumentFile,
+		getDocumentFileImages,
+		removeImageFromDocumentFile
 	} from '$lib/apis/knowledge';
+	import { WEBUI_API_BASE_URL } from '$lib/constants';
 	import { processWeb, processYoutubeVideo } from '$lib/apis/retrieval';
 
 	import { blobToFile, isYoutubeUrl } from '$lib/utils';
@@ -84,6 +88,10 @@
 	let selectedFileId = null;
 	let selectedFile = null;
 	let selectedFileContent = '';
+
+	let selectedFileImages: any[] = [];
+	let isUploadingImage = false;
+	let imageInputElement: HTMLInputElement;
 
 	let inputFiles = null;
 
@@ -158,8 +166,62 @@
 		try {
 			selectedFile = file;
 			selectedFileContent = selectedFile?.data?.content || '';
+
+			// Fetch document images
+			if (knowledge?.id && file?.id) {
+				try {
+					selectedFileImages =
+						(await getDocumentFileImages(localStorage.token, knowledge.id, file.id)) || [];
+				} catch (e) {
+					selectedFileImages = [];
+				}
+			} else {
+				selectedFileImages = [];
+			}
 		} catch (e) {
 			toast.error($i18n.t('Failed to load file content.'));
+		}
+	};
+
+	const handleImageUpload = async (event: Event) => {
+		const target = event.target as HTMLInputElement;
+		const files = target.files;
+		if (!files || !knowledge?.id || !selectedFileId) return;
+
+		isUploadingImage = true;
+		try {
+			for (const file of Array.from(files)) {
+				const result = await addImageToDocumentFile(
+					localStorage.token,
+					knowledge.id,
+					selectedFileId,
+					file
+				);
+				if (result) {
+					selectedFileImages = [...selectedFileImages, result];
+				}
+			}
+		} catch (e) {
+			toast.error($i18n.t('Failed to upload image.'));
+		} finally {
+			isUploadingImage = false;
+			if (imageInputElement) imageInputElement.value = '';
+		}
+	};
+
+	const handleImageDelete = async (imageFileId: string) => {
+		if (!knowledge?.id || !selectedFileId) return;
+
+		try {
+			await removeImageFromDocumentFile(
+				localStorage.token,
+				knowledge.id,
+				selectedFileId,
+				imageFileId
+			);
+			selectedFileImages = selectedFileImages.filter((img) => img.image_file_id !== imageFileId);
+		} catch (e) {
+			toast.error($i18n.t('Failed to delete image.'));
 		}
 	};
 
@@ -1088,6 +1150,67 @@
 											placeholder={$i18n.t('Add content here')}
 										/>
 									{/key}
+
+									<!-- Document Images Section -->
+									<div class="shrink-0 border-t dark:border-gray-850 px-3 py-3">
+										<div class="flex items-center justify-between mb-2">
+											<div class="text-sm font-medium dark:text-gray-300">
+												{$i18n.t('Document Images')}
+											</div>
+											{#if knowledge?.write_access}
+												<button
+													class="text-xs px-2 py-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 dark:text-gray-300 transition disabled:opacity-50"
+													disabled={isUploadingImage}
+													on:click={() => imageInputElement?.click()}
+												>
+													{#if isUploadingImage}
+														<Spinner className="size-3" />
+													{:else}
+														{$i18n.t('Add Image')}
+													{/if}
+												</button>
+												<input
+													bind:this={imageInputElement}
+													type="file"
+													accept="image/*"
+													multiple
+													class="hidden"
+													on:change={handleImageUpload}
+												/>
+											{/if}
+										</div>
+
+										{#if selectedFileImages.length > 0}
+											<div class="grid grid-cols-3 gap-2">
+												{#each selectedFileImages as image}
+													<div class="relative group">
+														<a
+															href={`${WEBUI_API_BASE_URL}/files/${image.image_file_id}/content`}
+															target="_blank"
+														>
+															<img
+																src={`${WEBUI_API_BASE_URL}/files/${image.image_file_id}/content`}
+																alt={image.filename}
+																class="w-full h-24 object-cover rounded-lg border dark:border-gray-700"
+															/>
+														</a>
+														{#if knowledge?.write_access}
+															<button
+																class="absolute top-1 right-1 bg-black/60 text-white rounded-full size-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition text-xs"
+																on:click={() => handleImageDelete(image.image_file_id)}
+															>
+																&times;
+															</button>
+														{/if}
+													</div>
+												{/each}
+											</div>
+										{:else}
+											<div class="text-xs text-gray-400 dark:text-gray-500">
+												{$i18n.t('No images attached')}
+											</div>
+										{/if}
+									</div>
 								</div>
 							</div>
 						</Drawer>

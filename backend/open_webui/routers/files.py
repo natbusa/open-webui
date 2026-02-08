@@ -36,6 +36,7 @@ from open_webui.models.files import (
 )
 from open_webui.models.chats import Chats
 from open_webui.models.knowledge import Knowledges
+from open_webui.models.document_images import DocumentImages
 from open_webui.models.groups import Groups
 
 
@@ -93,6 +94,16 @@ def has_access_to_file(
         )
         for knowledge_base in knowledge_bases:
             if knowledge_base.id == knowledge_base_id:
+                return True
+
+    # Check if this file is a document image linked via document_image table
+    doc_image_links = DocumentImages.get_documents_by_image_file_id(file_id, db=db)
+    for link in doc_image_links:
+        parent_kbs = Knowledges.get_knowledges_by_file_id(link.file_id, db=db)
+        for kb in parent_kbs:
+            if kb.user_id == user.id or has_access(
+                user.id, access_type, kb.access_control, user_group_ids, db=db
+            ):
                 return True
 
     # Check if the file is associated with any chats the user has access to

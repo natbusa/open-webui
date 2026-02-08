@@ -7,6 +7,7 @@
 
 	import XMark from '$lib/components/icons/XMark.svelte';
 	import Textarea from '$lib/components/common/Textarea.svelte';
+	import ImagePreviewModal from './ImagePreviewModal.svelte';
 
 	const i18n = getContext('i18n');
 
@@ -16,6 +17,10 @@
 	export let showRelevance = true;
 
 	let mergedDocuments = [];
+
+	let showImagePreview = false;
+	let previewImageSrc = '';
+	let previewImageAlt = '';
 
 	function calculatePercentage(distance: number) {
 		if (typeof distance !== 'number') return null;
@@ -223,7 +228,35 @@
 						</div>
 					</div>
 				{/each}
+
+				{#if citation?.images?.length > 0}
+					<div class="mt-3 pt-3 border-t dark:border-gray-700">
+						<div class="text-sm font-medium dark:text-gray-300 mb-2">
+							{$i18n.t('Images')}
+						</div>
+						<div class="grid grid-cols-2 gap-2">
+							{#each citation.images as image}
+								<button
+									class="cursor-pointer"
+									on:click={() => {
+										previewImageSrc = `${WEBUI_API_BASE_URL}/files/${image.image_file_id}/content`;
+										previewImageAlt = image.filename;
+										showImagePreview = true;
+									}}
+								>
+									<img
+										src={`${WEBUI_API_BASE_URL}/files/${image.image_file_id}/content`}
+										alt={image.filename}
+										class="w-full h-32 object-cover rounded-lg border dark:border-gray-700 hover:opacity-80 transition"
+									/>
+								</button>
+							{/each}
+						</div>
+					</div>
+				{/if}
 			</div>
 		</div>
 	</div>
 </Modal>
+
+<ImagePreviewModal bind:show={showImagePreview} src={previewImageSrc} alt={previewImageAlt} />

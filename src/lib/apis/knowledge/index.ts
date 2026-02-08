@@ -486,6 +486,115 @@ export const reindexKnowledgeFiles = async (token: string) => {
 	return res;
 };
 
+export const addImageToDocumentFile = async (
+	token: string,
+	knowledgeId: string,
+	fileId: string,
+	imageFile: File
+) => {
+	let error = null;
+
+	const formData = new FormData();
+	formData.append('image', imageFile);
+
+	const res = await fetch(
+		`${WEBUI_API_BASE_URL}/knowledge/${knowledgeId}/file/${fileId}/images/add`,
+		{
+			method: 'POST',
+			headers: {
+				authorization: `Bearer ${token}`
+			},
+			body: formData
+		}
+	)
+		.then(async (res) => {
+			if (!res.ok) throw await res.json();
+			return res.json();
+		})
+		.catch((err) => {
+			error = err.detail;
+			console.error(err);
+			return null;
+		});
+
+	if (error) {
+		throw error;
+	}
+
+	return res;
+};
+
+export const getDocumentFileImages = async (
+	token: string,
+	knowledgeId: string,
+	fileId: string
+) => {
+	let error = null;
+
+	const res = await fetch(
+		`${WEBUI_API_BASE_URL}/knowledge/${knowledgeId}/file/${fileId}/images`,
+		{
+			method: 'GET',
+			headers: {
+				Accept: 'application/json',
+				'Content-Type': 'application/json',
+				authorization: `Bearer ${token}`
+			}
+		}
+	)
+		.then(async (res) => {
+			if (!res.ok) throw await res.json();
+			return res.json();
+		})
+		.catch((err) => {
+			error = err.detail;
+			console.error(err);
+			return null;
+		});
+
+	if (error) {
+		throw error;
+	}
+
+	return res;
+};
+
+export const removeImageFromDocumentFile = async (
+	token: string,
+	knowledgeId: string,
+	fileId: string,
+	imageFileId: string
+) => {
+	let error = null;
+
+	const res = await fetch(
+		`${WEBUI_API_BASE_URL}/knowledge/${knowledgeId}/file/${fileId}/images/${imageFileId}`,
+		{
+			method: 'DELETE',
+			headers: {
+				Accept: 'application/json',
+				'Content-Type': 'application/json',
+				authorization: `Bearer ${token}`
+			}
+		}
+	)
+		.then(async (res) => {
+			if (!res.ok) throw await res.json();
+			return res.json();
+		})
+		.catch((err) => {
+			error = err.detail;
+			console.error(err);
+			return null;
+		});
+
+	if (error) {
+		throw error;
+	}
+
+	return res;
+};
+
 export const exportKnowledgeById = async (token: string, id: string) => {
 	let error = null;
 

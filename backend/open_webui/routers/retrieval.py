@@ -1539,13 +1539,27 @@ def save_docs_to_vector_db(
         )
 
         # Run async embedding in sync context
-        embeddings = asyncio.run(
-            embedding_function(
-                list(map(lambda x: x.replace("\n", " "), texts)),
-                prefix=RAG_EMBEDDING_CONTENT_PREFIX,
-                user=user,
+        # Use a separate thread when called from within a running event loop
+        # (e.g. uvicorn async handlers calling sync process_file)
+        def _run_embedding():
+            return asyncio.run(
+                embedding_function(
+                    list(map(lambda x: x.replace("\n", " "), texts)),
+                    prefix=RAG_EMBEDDING_CONTENT_PREFIX,
+                    user=user,
+                )
             )
-        )
+
+        try:
+            asyncio.get_running_loop()
+            # We're inside an event loop - run in a new thread with its own loop
+            import concurrent.futures
+
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+                embeddings = pool.submit(_run_embedding).result()
+        except RuntimeError:
+            # No running event loop - safe to call asyncio.run directly
+            embeddings = _run_embedding()
         log.info(f"embeddings generated {len(embeddings)} for {len(texts)} items")
 
         items = [

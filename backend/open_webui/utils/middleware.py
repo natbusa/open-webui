@@ -130,6 +130,51 @@ DEFAULT_REASONING_TAGS = [
 DEFAULT_SOLUTION_TAGS = [("<|begin_of_solution|>", "<|end_of_solution|>")]
 
 
+def _enrich_sources_with_images(sources: list[dict]) -> list[dict]:
+    """Attach document images to source dicts using file_id from metadata."""
+    try:
+        from open_webui.models.document_images import DocumentImages
+
+        # Collect file_ids from metadata (the actual document file IDs)
+        # source.id may be a collection/knowledge base ID, not a file ID
+        file_ids = set()
+        for s in sources:
+            for meta in s.get("metadata", []):
+                if isinstance(meta, dict) and meta.get("file_id"):
+                    file_ids.add(meta["file_id"])
+            # Also check source.id as fallback
+            source_id = s.get("source", {}).get("id") if s.get("source") else None
+            if source_id:
+                file_ids.add(source_id)
+
+        if file_ids:
+            images_by_file = DocumentImages.get_images_by_file_ids(list(file_ids))
+            for source in sources:
+                # Collect images from ALL file_ids in metadata, deduplicated
+                seen_image_ids = set()
+                all_images = []
+                for meta in source.get("metadata", []):
+                    if isinstance(meta, dict) and meta.get("file_id"):
+                        fid = meta["file_id"]
+                        for img in images_by_file.get(fid, []):
+                            if img["image_file_id"] not in seen_image_ids:
+                                seen_image_ids.add(img["image_file_id"])
+                                all_images.append(img)
+                # Fallback to source.id
+                if not all_images:
+                    source_id = source.get("source", {}).get("id") if source.get("source") else None
+                    if source_id:
+                        for img in images_by_file.get(source_id, []):
+                            if img["image_file_id"] not in seen_image_ids:
+                                seen_image_ids.add(img["image_file_id"])
+                                all_images.append(img)
+                if all_images:
+                    source["images"] = all_images
+    except Exception as e:
+        log.debug(f"Error enriching citation sources with images: {e}")
+    return sources
+
+
 def get_citation_source_from_tool_result(
     tool_name: str, tool_params: dict, tool_result: str, tool_id: str = ""
 ) -> list[dict]:
@@ -178,7 +223,7 @@ def get_citation_source_from_tool_result(
             file_id = file_data.get("id", "")
             knowledge_name = file_data.get("knowledge_name", "")
 
-            return [
+            return _enrich_sources_with_images([
                 {
                     "source": {
                         "id": file_id,
@@ -199,7 +244,7 @@ def get_citation_source_from_tool_result(
                         }
                     ],
                 }
-            ]
+            ])
 
         elif tool_name == "query_knowledge_files":
             chunks = json.loads(tool_result)
@@ -241,7 +286,7 @@ def get_citation_source_from_tool_result(
 
             # Return all grouped sources as a list
             if sources_by_file:
-                return list(sources_by_file.values())
+                return _enrich_sources_with_images(list(sources_by_file.values()))
 
             # Empty result fallback
             return []

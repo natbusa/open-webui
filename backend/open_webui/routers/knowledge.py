@@ -1,10 +1,12 @@
 from typing import List, Optional
 from pydantic import BaseModel
-from fastapi import APIRouter, Depends, HTTPException, status, Request, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Request, Query, UploadFile, File as FastAPIFile
 from fastapi.responses import StreamingResponse
 from fastapi.concurrency import run_in_threadpool
 import logging
 import io
+import os
+import uuid
 import zipfile
 
 from sqlalchemy.orm import Session
@@ -17,7 +19,8 @@ from open_webui.models.knowledge import (
     KnowledgeResponse,
     KnowledgeUserResponse,
 )
-from open_webui.models.files import Files, FileModel, FileMetadataResponse
+from open_webui.models.files import Files, FileModel, FileForm, FileMetadataResponse
+from open_webui.models.document_images import DocumentImages
 from open_webui.retrieval.vector.factory import VECTOR_DB_CLIENT
 from open_webui.routers.retrieval import (
     process_file,
@@ -718,6 +721,18 @@ def remove_file_from_knowledge_by_id(
         pass
 
     if delete_file:
+        # Delete associated document images
+        image_links = DocumentImages.get_images_by_file_id(form_data.file_id, db=db)
+        for link in image_links:
+            image_file = Files.get_file_by_id(link.image_file_id, db=db)
+            if image_file:
+                try:
+                    Storage.delete_file(image_file.path)
+                except Exception as e:
+                    log.debug(f"Error deleting image file from storage: {e}")
+                Files.delete_file_by_id(link.image_file_id, db=db)
+        DocumentImages.delete_all_images_for_file(form_data.file_id, db=db)
+
         try:
             # Remove the file's collection from vector database
             file_collection = f"file-{form_data.file_id}"
@@ -741,6 +756,202 @@ def remove_file_from_knowledge_by_id(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=ERROR_MESSAGES.NOT_FOUND,
         )
+
+
+############################
+# Document Image Endpoints
+############################
+
+
+@router.post("/{knowledge_id}/file/{file_id}/images/add")
+async def add_image_to_document(
+    knowledge_id: str,
+    file_id: str,
+    image: UploadFile = FastAPIFile(...),
+    user=Depends(get_verified_user),
+    db: Session = Depends(get_session),
+):
+    """Upload an image and link it to a document in a knowledge base."""
+    knowledge = Knowledges.get_knowledge_by_id(id=knowledge_id, db=db)
+    if not knowledge:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=ERROR_MESSAGES.NOT_FOUND,
+        )
+
+    if (
+        knowledge.user_id != user.id
+        and not has_access(user.id, "write", knowledge.access_control, db=db)
+        and user.role != "admin"
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=ERROR_MESSAGES.ACCESS_PROHIBITED,
+        )
+
+    # Verify file belongs to knowledge base
+    kb_files = Knowledges.get_files_by_id(knowledge_id, db=db)
+    if not any(f.id == file_id for f in kb_files):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File does not belong to this knowledge base",
+        )
+
+    # Validate uploaded file is an image
+    if not image.content_type or not image.content_type.startswith("image/"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Uploaded file must be an image",
+        )
+
+    # Upload the image file to storage
+    image_id = str(uuid.uuid4())
+    unsanitized_filename = image.filename or "image"
+    filename = os.path.basename(unsanitized_filename)
+    storage_filename = f"{image_id}_{filename}"
+
+    contents, file_path = Storage.upload_file(
+        image.file,
+        storage_filename,
+        {
+            "OpenWebUI-User-Email": user.email,
+            "OpenWebUI-User-Id": user.id,
+            "OpenWebUI-User-Name": user.name,
+            "OpenWebUI-File-Id": image_id,
+        },
+    )
+
+    # Create File record (no RAG processing)
+    file_item = Files.insert_new_file(
+        user.id,
+        FileForm(
+            id=image_id,
+            filename=filename,
+            path=file_path,
+            data={},
+            meta={
+                "name": filename,
+                "content_type": image.content_type,
+                "size": len(contents),
+            },
+        ),
+        db=db,
+    )
+
+    if not file_item:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create image file record",
+        )
+
+    # Create the document-image link
+    link = DocumentImages.add_image_to_document(
+        file_id=file_id,
+        image_file_id=image_id,
+        user_id=user.id,
+        db=db,
+    )
+
+    if not link:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to link image to document",
+        )
+
+    return {
+        "id": link.id,
+        "image_file_id": image_id,
+        "filename": filename,
+        "content_type": image.content_type,
+        "created_at": link.created_at,
+    }
+
+
+@router.get("/{knowledge_id}/file/{file_id}/images")
+async def get_document_images(
+    knowledge_id: str,
+    file_id: str,
+    user=Depends(get_verified_user),
+    db: Session = Depends(get_session),
+):
+    """List images linked to a document in a knowledge base."""
+    knowledge = Knowledges.get_knowledge_by_id(id=knowledge_id, db=db)
+    if not knowledge:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=ERROR_MESSAGES.NOT_FOUND,
+        )
+
+    if not (
+        user.role == "admin"
+        or knowledge.user_id == user.id
+        or has_access(user.id, "read", knowledge.access_control, db=db)
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=ERROR_MESSAGES.ACCESS_PROHIBITED,
+        )
+
+    links = DocumentImages.get_images_by_file_id(file_id, db=db)
+    result = []
+    for link in links:
+        image_file = Files.get_file_by_id(link.image_file_id, db=db)
+        if image_file:
+            result.append(
+                {
+                    "id": link.id,
+                    "image_file_id": link.image_file_id,
+                    "filename": image_file.filename,
+                    "content_type": (
+                        image_file.meta.get("content_type") if image_file.meta else None
+                    ),
+                    "created_at": link.created_at,
+                }
+            )
+    return result
+
+
+@router.delete("/{knowledge_id}/file/{file_id}/images/{image_file_id}")
+async def remove_image_from_document(
+    knowledge_id: str,
+    file_id: str,
+    image_file_id: str,
+    user=Depends(get_verified_user),
+    db: Session = Depends(get_session),
+):
+    """Remove an image from a document and delete the image file."""
+    knowledge = Knowledges.get_knowledge_by_id(id=knowledge_id, db=db)
+    if not knowledge:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=ERROR_MESSAGES.NOT_FOUND,
+        )
+
+    if (
+        knowledge.user_id != user.id
+        and not has_access(user.id, "write", knowledge.access_control, db=db)
+        and user.role != "admin"
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=ERROR_MESSAGES.ACCESS_PROHIBITED,
+        )
+
+    # Remove the link
+    DocumentImages.remove_image_from_document(
+        file_id=file_id, image_file_id=image_file_id, db=db
+    )
+
+    # Delete the image file from storage and DB
+    image_file = Files.get_file_by_id(image_file_id, db=db)
+    if image_file:
+        try:
+            Storage.delete_file(image_file.path)
+        except Exception as e:
+            log.debug(f"Error deleting image file from storage: {e}")
+        Files.delete_file_by_id(image_file_id, db=db)
+
+    return True
 
 
 ############################

@@ -26,6 +26,7 @@ from open_webui.retrieval.vector.factory import VECTOR_DB_CLIENT
 from open_webui.models.users import UserModel
 from open_webui.models.files import Files
 from open_webui.models.knowledge import Knowledges
+from open_webui.models.document_images import DocumentImages
 
 from open_webui.retrieval.vector.main import GetResult
 from open_webui.utils.access_control import has_access
@@ -1162,6 +1163,46 @@ async def get_sources_from_items(
                     sources.append(source)
         except Exception as e:
             log.exception(e)
+
+    # Enrich sources with document images
+    # Note: source.id may be a collection/knowledge base ID, not a file ID.
+    # The actual document file_id is in metadata entries.
+    try:
+        file_ids = set()
+        for s in sources:
+            for meta in s.get("metadata", []):
+                if isinstance(meta, dict) and meta.get("file_id"):
+                    file_ids.add(meta["file_id"])
+            source_id = s.get("source", {}).get("id") if s.get("source") else None
+            if source_id:
+                file_ids.add(source_id)
+
+        if file_ids:
+            images_by_file = DocumentImages.get_images_by_file_ids(list(file_ids))
+            for source in sources:
+                # Collect images from ALL file_ids in metadata, deduplicated
+                seen_image_ids = set()
+                all_images = []
+                for meta in source.get("metadata", []):
+                    if isinstance(meta, dict) and meta.get("file_id"):
+                        fid = meta["file_id"]
+                        for img in images_by_file.get(fid, []):
+                            if img["image_file_id"] not in seen_image_ids:
+                                seen_image_ids.add(img["image_file_id"])
+                                all_images.append(img)
+                # Fallback to source.id
+                if not all_images:
+                    source_id = source.get("source", {}).get("id") if source.get("source") else None
+                    if source_id:
+                        for img in images_by_file.get(source_id, []):
+                            if img["image_file_id"] not in seen_image_ids:
+                                seen_image_ids.add(img["image_file_id"])
+                                all_images.append(img)
+                if all_images:
+                    source["images"] = all_images
+    except Exception as e:
+        log.debug(f"Error enriching sources with images: {e}")
+
     return sources
 
 
