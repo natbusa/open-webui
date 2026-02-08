@@ -38,6 +38,7 @@
 	import EllipsisHorizontal from '$lib/components/icons/EllipsisHorizontal.svelte';
 	import EyeSlash from '$lib/components/icons/EyeSlash.svelte';
 	import Eye from '$lib/components/icons/Eye.svelte';
+	import ChatPlus from '$lib/components/icons/ChatPlus.svelte';
 	import { WEBUI_API_BASE_URL, WEBUI_BASE_URL } from '$lib/constants';
 	import { goto } from '$app/navigation';
 
@@ -219,19 +220,6 @@
 		saveAs(blob, `${model.id}-${Date.now()}.json`);
 	};
 
-	const pinModelHandler = async (modelId) => {
-		let pinnedModels = $settings?.pinnedModels ?? [];
-
-		if (pinnedModels.includes(modelId)) {
-			pinnedModels = pinnedModels.filter((id) => id !== modelId);
-		} else {
-			pinnedModels = [...new Set([...pinnedModels, modelId])];
-		}
-
-		settings.set({ ...$settings, pinnedModels: pinnedModels });
-		await updateUserSettings(localStorage.token, { ui: $settings });
-	};
-
 	onMount(async () => {
 		await init();
 		const id = $page.url.searchParams.get('id');
@@ -409,6 +397,20 @@
 									</button>
 								</Tooltip>
 							{:else}
+								<Tooltip content={$i18n.t('Chat')}>
+									<button
+										class="self-center w-fit text-sm px-2 py-2 dark:text-gray-300 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 rounded-xl"
+										type="button"
+										on:click={async () => {
+											$settings.activeModel = model.id;
+											await updateUserSettings(localStorage.token, { ui: $settings });
+											goto(`/c?models=${encodeURIComponent(model.id)}`);
+										}}
+									>
+										<ChatPlus className="size-4" strokeWidth="1.5" />
+									</button>
+								</Tooltip>
+
 								<button
 									class="self-center w-fit text-sm px-2 py-2 dark:text-gray-300 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 rounded-xl"
 									type="button"
@@ -440,9 +442,6 @@
 									}}
 									hideHandler={() => {
 										hideModelHandler(model);
-									}}
-									pinModelHandler={() => {
-										pinModelHandler(model.id);
 									}}
 									copyLinkHandler={() => {
 										copyLinkHandler(model);
