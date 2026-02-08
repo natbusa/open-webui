@@ -4,7 +4,7 @@
 	import { fly } from 'svelte/transition';
 	import { flyAndScale } from '$lib/utils/transitions';
 
-	import { config, user, mobile, chats } from '$lib/stores';
+	import { config, user, mobile } from '$lib/stores';
 
 	import { createPicker } from '$lib/utils/google-drive-picker';
 
@@ -16,10 +16,8 @@
 	import ChatBubbleOval from '$lib/components/icons/ChatBubbleOval.svelte';
 	import Refresh from '$lib/components/icons/Refresh.svelte';
 	import Agile from '$lib/components/icons/Agile.svelte';
-	import ClockRotateRight from '$lib/components/icons/ClockRotateRight.svelte';
 	import ChevronRight from '$lib/components/icons/ChevronRight.svelte';
 	import ChevronLeft from '$lib/components/icons/ChevronLeft.svelte';
-	import Chats from './InputMenu/Chats.svelte';
 	import AttachWebpageModal from './AttachWebpageModal.svelte';
 	import GlobeAlt from '$lib/components/icons/GlobeAlt.svelte';
 
@@ -66,20 +64,6 @@
 		}
 	};
 
-	const onSelect = (item) => {
-		if (files.find((f) => f.id === item.id)) {
-			return;
-		}
-		files = [
-			...files,
-			{
-				...item,
-				status: 'processed'
-			}
-		];
-
-		show = false;
-	};
 </script>
 
 <AttachWebpageModal
@@ -145,38 +129,6 @@
 							<div class="line-clamp-1">{$i18n.t('Upload Files')}</div>
 						</DropdownMenu.Item>
 					</Tooltip>
-
-					{#if ($chats ?? []).length > 0}
-						<Tooltip
-							content={fileUploadCapableModels.length !== selectedModels.length
-								? $i18n.t('Model(s) do not support file upload')
-								: !fileUploadEnabled
-									? $i18n.t('You do not have permission to upload files.')
-									: ''}
-							className="w-full"
-						>
-							<button
-								class="flex gap-2 w-full items-center px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-xl {!fileUploadEnabled
-									? 'opacity-50'
-									: ''}"
-								on:click={() => {
-									tab = 'chats';
-								}}
-							>
-								<ClockRotateRight />
-
-								<div class="flex items-center w-full justify-between">
-									<div class=" line-clamp-1">
-										{$i18n.t('Reference Chats')}
-									</div>
-
-									<div class="text-gray-500">
-										<ChevronRight />
-									</div>
-								</div>
-							</button>
-						</Tooltip>
-					{/if}
 
 					{#if fileUploadEnabled}
 						{#if $config?.features?.enable_google_drive_integration}
@@ -324,26 +276,7 @@
 						{/if}
 					{/if}
 				</div>
-	{:else if tab === 'chats'}
-				<div in:fly={{ x: 20, duration: 150 }}>
-					<button
-						class="flex w-full justify-between gap-2 items-center px-3 py-1.5 text-sm cursor-pointer rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/50"
-						on:click={() => {
-							tab = '';
-						}}
-					>
-						<ChevronLeft />
-
-						<div class="flex items-center w-full justify-between">
-							<div>
-								{$i18n.t('Chats')}
-							</div>
-						</div>
-					</button>
-
-					<Chats {onSelect} />
-				</div>
-			{:else if tab === 'microsoft_onedrive'}
+	{:else if tab === 'microsoft_onedrive'}
 				<div in:fly={{ x: 20, duration: 150 }}>
 					<button
 						class="flex w-full justify-between gap-2 items-center px-3 py-1.5 text-sm cursor-pointer rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/50"
