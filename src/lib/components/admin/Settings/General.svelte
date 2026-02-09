@@ -106,31 +106,23 @@
 					<hr class=" border-gray-100/30 dark:border-gray-850/30 my-2" />
 
 					<div class="mb-2.5">
-						<div class=" mb-1 text-xs font-medium flex space-x-2 items-center">
-							<div>
-								{$i18n.t('Version')}
-							</div>
+						<div class=" mb-1 text-xs font-medium">
+							{$i18n.t('Version')}: v{WEBUI_VERSION} ({WEBUI_BUILD_HASH})
 						</div>
-						<div class="flex w-full justify-between items-center">
-							<div class="flex flex-col text-xs text-gray-700 dark:text-gray-200">
-								<div class="flex gap-1">
-									<Tooltip content={WEBUI_BUILD_HASH}>
-										v{WEBUI_VERSION}
-									</Tooltip>
-
-								</div>
-
-								<button
-									class=" underline flex items-center space-x-1 text-xs text-gray-500 dark:text-gray-500"
-									type="button"
-									on:click={() => {
-										showChangelog.set(true);
-									}}
-								>
-									<div>{$i18n.t("See what's new")}</div>
-								</button>
-							</div>
-
+						<div class="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-500">
+							open-webui-lite is a mod of <a
+								href="https://github.com/open-webui/open-webui"
+								target="_blank"
+								class="underline">Open WebUI</a> -
+							<button
+								class="underline"
+								type="button"
+								on:click={() => {
+									showChangelog.set(true);
+								}}
+							>
+								{$i18n.t("See what's new")}
+							</button>
 						</div>
 					</div>
 

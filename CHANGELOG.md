@@ -5,6 +5,57 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2026-02-09
+
+open-webui-lite is a streamlined mod of [Open WebUI](https://github.com/open-webui/open-webui), forked from v0.7.2. This release strips away features that add complexity without benefit for focused LLM chat workflows, fixes dependency vulnerabilities, and establishes a clean, maintainable codebase.
+
+### Added
+
+- Image RAG: associate images with knowledge base documents
+- Reviews & Feedback evaluations (without leaderboard/arena)
+- `ship.sh` build script for slim Docker image builds and push
+- Chat button on admin models page
+- Workspace split into Base Models, Starred Assistants, and Assistants
+- "Hi, username" greeting on chat placeholder instead of model name
+- Sidebar Workspace link replaced with Assistants and Knowledge
+- Workspace as home page, new chat moved to `/c`
+- Model copy/pinned links point to `/c?model=`
+- Warm desert-tone Neom color scheme replacing neutral gray palette
+- Mod attribution in admin settings with build hash
+
+### Removed
+
+- **Features**: Prompts, User Tools, Tool Servers (MCP/OpenAPI/Direct), Channels, DMs, Threads, Reactions, Webhooks, Functions/Filters, Evaluations Leaderboard/Arena, Multi-model selection, Reference Chats, Artifacts, Embeds, Notes, Code Execution, Rich Text Input, Chat Overview, Playground, Continue Response, EmojiPicker
+- **Chat commands**: `#` (knowledge) and `@` (model) command insertion, `/` prompt commands
+- **UI**: CommandSuggestionList, ModelSelector, MultiResponseMessages, ValvesModal, ActionsSelector, FiltersSelector, Upload Files button in model knowledge editor, New Chat buttons/shortcuts, System Prompt and Advanced Parameters from Settings General, detailed rating from feedback annotation
+- **Backend**: prompts/tools/channels/functions/evaluations routers and models, feedbacks model, filter utils, arena model injection, channel socket handlers, legacy license code
+- **Config**: `ENABLE_VERSION_UPDATE_CHECK`, `EVALUATION_*` configs, `DEFAULT_ARENA_MODEL`, `enable_model_selection`, `multiple_models` permission, `direct_tool_servers` feature, version update check endpoint and UI, Help/Documentation/License sections from admin settings, empty secret ENV defaults from Dockerfile
+- **Dependencies**: `svelte-virtual-list`
+
+### Fixed
+
+- Resolved lodash-es prototype pollution and extracted mermaid module
+- Replaced xlsx with exceljs to resolve CVE-2024-22363 prototype pollution
+- Upgraded vite to v6, vitest to v3, svelte vite plugin to v5
+- Applied npm audit fix to resolve 13 dependency vulnerabilities
+- Overridden cookie to ^0.7.0 to resolve GHSA-pxg6-pf52-xh8x
+- Resolved npm install peer dependency conflicts
+- Serialized alembic migration chain to single head
+- Replaced self-closing div tags with explicit closing tags
+- Used SvelteKit `replaceState` instead of `window.history.replaceState`
+- Cleaned up Svelte warnings: aria-labels, self-closing tags, unused exports/CSS
+- Removed noisy `get_all_models` log statements
+- Removed dead `/channels/` route check from `handleLinkClick`
+- Removed `WEBUI_NAME` appended string
+
+### Changed
+
+- Simplified to single model selection (single-element array internally)
+- Navbar shows static model name
+- Redirect `/c` to `/workspace/models` when no model selected
+- Package renamed to `open-webui-lite`, version reset to 1.0.0
+- Removed upstream git remote
+
 ## [0.7.2] - 2026-01-10
 
 ### Fixed
