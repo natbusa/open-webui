@@ -138,7 +138,6 @@ type OllamaModelDetails = {
 
 type Settings = {
 	pinnedModels?: never[];
-	showUpdateToast?: boolean;
 	showChangelog?: boolean;
 	showEmojiInCall?: boolean;
 	voiceInterruption?: boolean;
@@ -250,7 +249,7 @@ type Config = {
 		enable_memories: boolean;
 		enable_autocomplete_generation: boolean;
 		enable_direct_connections: boolean;
-		enable_version_update_check: boolean;
+
 		folder_max_file_count?: number;
 	};
 	oauth: {
