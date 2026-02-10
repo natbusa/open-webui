@@ -241,17 +241,9 @@
 
 		const model = $models.find((m) => m.id === selectedModels[0]);
 		if (model) {
-			// Set Default Features
-			if (model?.info?.meta?.defaultFeatureIds) {
-				if (model.info?.meta?.capabilities?.['image_generation']) {
-					imageGenerationEnabled = model.info.meta.defaultFeatureIds.includes('image_generation');
-				}
-
-				if (model.info?.meta?.capabilities?.['web_search']) {
-					webSearchEnabled = model.info.meta.defaultFeatureIds.includes('web_search');
-				}
-
-			}
+			// Capabilities directly control defaults: if capable, it's on by default
+			imageGenerationEnabled = model.info?.meta?.capabilities?.['image_generation'] ?? false;
+			webSearchEnabled = model.info?.meta?.capabilities?.['web_search'] ?? false;
 		}
 	};
 

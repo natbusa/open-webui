@@ -13,7 +13,7 @@
 	import AccessControl from '../common/AccessControl.svelte';
 	import Spinner from '$lib/components/common/Spinner.svelte';
 	import XMark from '$lib/components/icons/XMark.svelte';
-	import DefaultFeatures from './DefaultFeatures.svelte';
+
 	import PromptSuggestions from './PromptSuggestions.svelte';
 	import AccessControlModal from '../common/AccessControlModal.svelte';
 	import LockClosed from '$lib/components/icons/LockClosed.svelte';
@@ -81,7 +81,6 @@
 	let knowledge = [];
 
 	let capabilities = {
-		file_context: true,
 		vision: true,
 		file_upload: true,
 		web_search: true,
@@ -90,8 +89,6 @@
 		usage: undefined,
 		builtin_tools: true
 	};
-	let defaultFeatureIds = [];
-
 	let accessControl = {};
 	let tts = { voice: '' };
 
@@ -141,12 +138,9 @@
 			}
 		}
 
-		if (defaultFeatureIds.length > 0) {
-			info.meta.defaultFeatureIds = defaultFeatureIds;
-		} else {
-			if (info.meta.defaultFeatureIds) {
-				delete info.meta.defaultFeatureIds;
-			}
+		// Clean up legacy defaultFeatureIds if present
+		if (info.meta.defaultFeatureIds) {
+			delete info.meta.defaultFeatureIds;
 		}
 
 		if (tts.voice !== '') {
@@ -233,7 +227,6 @@
 			});
 
 			capabilities = { ...capabilities, ...(model?.meta?.capabilities ?? {}) };
-			defaultFeatureIds = model?.meta?.defaultFeatureIds ?? [];
 			tts = { voice: model?.meta?.tts?.voice ?? '' };
 
 			if ('access_control' in model) {
@@ -668,21 +661,6 @@
 					<div class="my-2">
 						<Capabilities bind:capabilities />
 					</div>
-
-					{#if Object.keys(capabilities).filter((key) => capabilities[key]).length > 0}
-						{@const availableFeatures = Object.entries(capabilities)
-							.filter(
-								([key, value]) =>
-									value && ['web_search', 'image_generation'].includes(key)
-							)
-							.map(([key, value]) => key)}
-
-						{#if availableFeatures.length > 0}
-							<div class="my-2">
-								<DefaultFeatures {availableFeatures} bind:featureIds={defaultFeatureIds} />
-							</div>
-						{/if}
-					{/if}
 
 					<div class="my-2">
 						<div class="flex w-full justify-between mb-1">
