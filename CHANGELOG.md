@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-02-10
+
+### Removed
+
+- **File Context capability**: removed `file_context` toggle from model capabilities; RAG file extraction now always runs unconditionally for uploaded files
+- **Default Features selector**: removed `DefaultFeatures.svelte` component and `defaultFeatureIds` from model editor; capabilities now directly control feature defaults (web_search, image_generation)
+
 ## [1.1.0] - 2026-02-10
 
 ### Removed
