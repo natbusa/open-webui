@@ -5,12 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.2.0] - 2026-02-10
+## [1.3.0] - 2026-02-10
 
 ### Removed
 
 - **File Context capability**: removed `file_context` toggle from model capabilities; RAG file extraction now always runs unconditionally for uploaded files
 - **Default Features selector**: removed `DefaultFeatures.svelte` component and `defaultFeatureIds` from model editor; capabilities now directly control feature defaults (web_search, image_generation)
+- **Sharing permissions**: removed models/knowledge sharing and public sharing permission toggles and backend checks; link sharing is always allowed, access depends on recipient authorization
+- **System prompt permission**: removed toggle; non-admin users can never set system prompts (use knowledge models instead)
+- **Enforce Temporary Chat**: removed permission and enforced-temp-chat logic
+- **Models/Knowledge Access labels**: removed always-enabled workspace access labels and backend permission checks
+
+### Changed
+
+- Group permissions UI: show "Overridden" indicator only when group differs from default; hide permissions already disabled in defaults (subtractive AND logic)
 
 ## [1.1.0] - 2026-02-10
 
