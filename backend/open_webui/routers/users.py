@@ -22,7 +22,6 @@ from open_webui.models.users import (
     UserInfoListResponse,
     UserInfoListResponse,
     UserRoleUpdateForm,
-    UserStatus,
     Users,
     UserSettings,
     UserUpdateForm,
@@ -311,60 +310,6 @@ async def update_user_settings_by_session_user(
 
 
 ############################
-# GetUserStatusBySessionUser
-############################
-
-
-@router.get("/user/status")
-async def get_user_status_by_session_user(
-    request: Request,
-    user=Depends(get_verified_user),
-    db: Session = Depends(get_session),
-):
-    if not request.app.state.config.ENABLE_USER_STATUS:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=ERROR_MESSAGES.ACTION_PROHIBITED,
-        )
-    user = Users.get_user_by_id(user.id, db=db)
-    if user:
-        return user
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=ERROR_MESSAGES.USER_NOT_FOUND,
-        )
-
-
-############################
-# UpdateUserStatusBySessionUser
-############################
-
-
-@router.post("/user/status/update")
-async def update_user_status_by_session_user(
-    request: Request,
-    form_data: UserStatus,
-    user=Depends(get_verified_user),
-    db: Session = Depends(get_session),
-):
-    if not request.app.state.config.ENABLE_USER_STATUS:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=ERROR_MESSAGES.ACTION_PROHIBITED,
-        )
-    user = Users.get_user_by_id(user.id, db=db)
-    if user:
-        user = Users.update_user_status_by_id(user.id, form_data, db=db)
-        return user
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=ERROR_MESSAGES.USER_NOT_FOUND,
-        )
-
-
-############################
 # GetUserInfoBySessionUser
 ############################
 
@@ -419,7 +364,7 @@ async def update_user_info_by_session_user(
 ############################
 
 
-class UserActiveResponse(UserStatus):
+class UserActiveResponse(BaseModel):
     name: str
     profile_image_url: Optional[str] = None
     groups: Optional[list] = []

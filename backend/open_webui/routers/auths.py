@@ -22,7 +22,6 @@ from open_webui.models.users import (
     UserProfileImageResponse,
     Users,
     UpdateProfileForm,
-    UserStatus,
 )
 from open_webui.models.groups import Groups
 from open_webui.models.oauth_sessions import OAuthSessions
@@ -97,7 +96,7 @@ class SessionUserResponse(Token, UserProfileImageResponse):
     permissions: Optional[dict] = None
 
 
-class SessionUserInfoResponse(SessionUserResponse, UserStatus):
+class SessionUserInfoResponse(SessionUserResponse):
     bio: Optional[str] = None
     gender: Optional[str] = None
     date_of_birth: Optional[datetime.date] = None
@@ -157,9 +156,6 @@ async def get_session_user(
         "bio": user.bio,
         "gender": user.gender,
         "date_of_birth": user.date_of_birth,
-        "status_emoji": user.status_emoji,
-        "status_message": user.status_message,
-        "status_expires_at": user.status_expires_at,
         "permissions": user_permissions,
     }
 
@@ -1018,7 +1014,6 @@ async def get_admin_config(request: Request, user=Depends(get_admin_user)):
         "FOLDER_MAX_FILE_COUNT": request.app.state.config.FOLDER_MAX_FILE_COUNT,
         "ENABLE_MEMORIES": request.app.state.config.ENABLE_MEMORIES,
         "ENABLE_USER_WEBHOOKS": request.app.state.config.ENABLE_USER_WEBHOOKS,
-        "ENABLE_USER_STATUS": request.app.state.config.ENABLE_USER_STATUS,
         "PENDING_USER_OVERLAY_TITLE": request.app.state.config.PENDING_USER_OVERLAY_TITLE,
         "PENDING_USER_OVERLAY_CONTENT": request.app.state.config.PENDING_USER_OVERLAY_CONTENT,
         "RESPONSE_WATERMARK": request.app.state.config.RESPONSE_WATERMARK,
@@ -1042,7 +1037,6 @@ class AdminConfig(BaseModel):
     FOLDER_MAX_FILE_COUNT: Optional[int | str] = None
     ENABLE_MEMORIES: bool
     ENABLE_USER_WEBHOOKS: bool
-    ENABLE_USER_STATUS: bool
     PENDING_USER_OVERLAY_TITLE: Optional[str] = None
     PENDING_USER_OVERLAY_CONTENT: Optional[str] = None
     RESPONSE_WATERMARK: Optional[str] = None
@@ -1088,7 +1082,6 @@ async def update_admin_config(
     request.app.state.config.ENABLE_MESSAGE_RATING = form_data.ENABLE_MESSAGE_RATING
 
     request.app.state.config.ENABLE_USER_WEBHOOKS = form_data.ENABLE_USER_WEBHOOKS
-    request.app.state.config.ENABLE_USER_STATUS = form_data.ENABLE_USER_STATUS
 
     request.app.state.config.PENDING_USER_OVERLAY_TITLE = (
         form_data.PENDING_USER_OVERLAY_TITLE
@@ -1116,7 +1109,6 @@ async def update_admin_config(
         "FOLDER_MAX_FILE_COUNT": request.app.state.config.FOLDER_MAX_FILE_COUNT,
         "ENABLE_MEMORIES": request.app.state.config.ENABLE_MEMORIES,
         "ENABLE_USER_WEBHOOKS": request.app.state.config.ENABLE_USER_WEBHOOKS,
-        "ENABLE_USER_STATUS": request.app.state.config.ENABLE_USER_STATUS,
         "PENDING_USER_OVERLAY_TITLE": request.app.state.config.PENDING_USER_OVERLAY_TITLE,
         "PENDING_USER_OVERLAY_CONTENT": request.app.state.config.PENDING_USER_OVERLAY_CONTENT,
         "RESPONSE_WATERMARK": request.app.state.config.RESPONSE_WATERMARK,

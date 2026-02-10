@@ -7,7 +7,7 @@
 	import { fade, slide } from 'svelte/transition';
 
 	import { getUsage } from '$lib/apis';
-	import { getSessionUser, userSignOut } from '$lib/apis/auths';
+	import { userSignOut } from '$lib/apis/auths';
 
 	import { showSettings, mobile, showSidebar, showShortcuts, user, config } from '$lib/stores';
 
@@ -22,12 +22,6 @@
 	import Settings from '$lib/components/icons/Settings.svelte';
 	import UserGroup from '$lib/components/icons/UserGroup.svelte';
 	import SignOut from '$lib/components/icons/SignOut.svelte';
-	import FaceSmile from '$lib/components/icons/FaceSmile.svelte';
-	import UserStatusModal from './UserStatusModal.svelte';
-	import Emoji from '$lib/components/common/Emoji.svelte';
-	import XMark from '$lib/components/icons/XMark.svelte';
-	import { updateUserStatus } from '$lib/apis/users';
-	import { toast } from 'svelte-sonner';
 
 	const i18n = getContext('i18n');
 
@@ -40,8 +34,6 @@
 	export let className = 'max-w-[240px]';
 
 	export let showActiveUsers = true;
-
-	let showUserStatusModal = false;
 
 	const dispatch = createEventDispatcher();
 
@@ -69,12 +61,6 @@
 </script>
 
 <ShortcutsModal bind:show={$showShortcuts} />
-<UserStatusModal
-	bind:show={showUserStatusModal}
-	onSave={async () => {
-		user.set(await getSessionUser(localStorage.token));
-	}}
-/>
 
 <!-- svelte-ignore a11y-no-static-element-interactions -->
 <DropdownMenu.Root bind:open={show} onOpenChange={handleDropdownChange}>
@@ -128,75 +114,6 @@
 						</div>
 					</div>
 				</div>
-
-				{#if $user?.status_emoji || $user?.status_message}
-					<div class="mx-1">
-						<button
-							class="mb-1 w-full gap-2 px-2.5 py-1.5 rounded-xl bg-gray-50 dark:text-white dark:bg-gray-900/50 text-black transition text-xs flex items-center"
-							type="button"
-							on:click={() => {
-								show = false;
-								showUserStatusModal = true;
-							}}
-						>
-							{#if $user?.status_emoji}
-								<div class=" self-center shrink-0">
-									<Emoji className="size-4" shortCode={$user?.status_emoji} />
-								</div>
-							{/if}
-
-							<Tooltip
-								content={$user?.status_message}
-								className=" self-center line-clamp-2 flex-1 text-left"
-							>
-								{$user?.status_message}
-							</Tooltip>
-
-							<div class="self-start">
-								<Tooltip content={$i18n.t('Clear status')}>
-									<button
-										type="button"
-										on:click={async (e) => {
-											e.preventDefault();
-											e.stopPropagation();
-											e.stopImmediatePropagation();
-
-											const res = await updateUserStatus(localStorage.token, {
-												status_emoji: '',
-												status_message: ''
-											});
-
-											if (res) {
-												toast.success($i18n.t('Status cleared successfully'));
-												user.set(await getSessionUser(localStorage.token));
-											} else {
-												toast.error($i18n.t('Failed to clear status'));
-											}
-										}}
-									>
-										<XMark className="size-4 opacity-50" strokeWidth="2" />
-									</button>
-								</Tooltip>
-							</div>
-						</button>
-					</div>
-				{:else}
-					<div class="mx-1">
-						<button
-							class="mb-1 w-full px-3 py-1.5 gap-1 rounded-xl bg-gray-50 dark:text-white dark:bg-gray-900/50 text-black transition text-xs flex items-center justify-center"
-							type="button"
-							on:click={() => {
-								show = false;
-								showUserStatusModal = true;
-							}}
-						>
-							<div class=" self-center">
-								<FaceSmile className="size-4" strokeWidth="1.5" />
-							</div>
-							<div class=" self-center truncate">{$i18n.t('Update your status')}</div>
-						</button>
-					</div>
-				{/if}
 
 				<hr class=" border-gray-50/30 dark:border-gray-800/30 my-1.5 p-0" />
 			{/if}

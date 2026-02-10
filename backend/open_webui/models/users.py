@@ -172,13 +172,7 @@ class UserGroupIdsListResponse(BaseModel):
     total: int
 
 
-class UserStatus(BaseModel):
-    status_emoji: Optional[str] = None
-    status_message: Optional[str] = None
-    status_expires_at: Optional[int] = None
-
-
-class UserInfoResponse(UserStatus):
+class UserInfoResponse(BaseModel):
     id: str
     name: str
     email: str
@@ -190,7 +184,7 @@ class UserIdNameResponse(BaseModel):
     name: str
 
 
-class UserIdNameStatusResponse(UserStatus):
+class UserIdNameStatusResponse(BaseModel):
     id: str
     name: str
     is_active: Optional[bool] = None
@@ -520,21 +514,6 @@ class UsersTable:
             with get_db_context(db) as db:
                 db.query(User).filter_by(id=id).update({"role": role})
                 db.commit()
-                user = db.query(User).filter_by(id=id).first()
-                return UserModel.model_validate(user)
-        except Exception:
-            return None
-
-    def update_user_status_by_id(
-        self, id: str, form_data: UserStatus, db: Optional[Session] = None
-    ) -> Optional[UserModel]:
-        try:
-            with get_db_context(db) as db:
-                db.query(User).filter_by(id=id).update(
-                    {**form_data.model_dump(exclude_none=True)}
-                )
-                db.commit()
-
                 user = db.query(User).filter_by(id=id).first()
                 return UserModel.model_validate(user)
         except Exception:

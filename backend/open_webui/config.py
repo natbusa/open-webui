@@ -1385,12 +1385,6 @@ FOLDER_MAX_FILE_COUNT = PersistentConfig(
     os.environ.get("FOLDER_MAX_FILE_COUNT", ""),
 )
 
-ENABLE_USER_STATUS = PersistentConfig(
-    "ENABLE_USER_STATUS",
-    "users.enable_status",
-    os.environ.get("ENABLE_USER_STATUS", "True").lower() == "true",
-)
-
 WEBHOOK_URL = PersistentConfig(
     "WEBHOOK_URL", "webhook_url", os.environ.get("WEBHOOK_URL", "")
 )
