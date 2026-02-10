@@ -1006,6 +1006,11 @@ async def update_rag_config(
         if form_data.TEXT_SPLITTER is not None
         else request.app.state.config.TEXT_SPLITTER
     )
+    request.app.state.config.ENABLE_MARKDOWN_HEADER_TEXT_SPLITTER = (
+        form_data.ENABLE_MARKDOWN_HEADER_TEXT_SPLITTER
+        if form_data.ENABLE_MARKDOWN_HEADER_TEXT_SPLITTER is not None
+        else request.app.state.config.ENABLE_MARKDOWN_HEADER_TEXT_SPLITTER
+    )
     request.app.state.config.CHUNK_SIZE = (
         form_data.CHUNK_SIZE
         if form_data.CHUNK_SIZE is not None
@@ -1434,7 +1439,8 @@ def save_docs_to_vector_db(
     if split:
         if request.app.state.config.ENABLE_MARKDOWN_HEADER_TEXT_SPLITTER:
             log.info("Using markdown header text splitter")
-            # Define headers to split on - covering most common markdown header levels
+
+            # Phase 1: Split by markdown headers first (preserves hierarchy in metadata)
             markdown_splitter = MarkdownHeaderTextSplitter(
                 headers_to_split_on=[
                     ("#", "Header 1"),
@@ -1449,19 +1455,40 @@ def save_docs_to_vector_db(
 
             split_docs = []
             for doc in docs:
-                split_docs.extend(
-                    [
-                        Document(
-                            page_content=split_chunk.page_content,
-                            metadata={**doc.metadata},
-                        )
-                        for split_chunk in markdown_splitter.split_text(
-                            doc.page_content
-                        )
-                    ]
-                )
+                md_chunks = markdown_splitter.split_text(doc.page_content)
+                if md_chunks:
+                    split_docs.extend(
+                        [
+                            Document(
+                                page_content=split_chunk.page_content,
+                                metadata={**doc.metadata, **split_chunk.metadata},
+                            )
+                            for split_chunk in md_chunks
+                        ]
+                    )
+                else:
+                    # No headers found, keep original document
+                    split_docs.append(doc)
 
-            docs = split_docs
+            # Phase 2: Split on horizontal rules (---) within each header section
+            hr_pattern = re.compile(r"^\s*-{3,}\s*$", re.MULTILINE)
+            hr_split_docs = []
+            for doc in split_docs:
+                sections = hr_pattern.split(doc.page_content)
+                if len(sections) > 1:
+                    for section in sections:
+                        section = section.strip()
+                        if section:
+                            hr_split_docs.append(
+                                Document(
+                                    page_content=section,
+                                    metadata={**doc.metadata},
+                                )
+                            )
+                else:
+                    hr_split_docs.append(doc)
+
+            docs = hr_split_docs
             if request.app.state.config.CHUNK_MIN_SIZE_TARGET > 0:
                 docs = merge_docs_to_target_size(request, docs)
 

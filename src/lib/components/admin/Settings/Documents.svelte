@@ -325,14 +325,14 @@
 		<div class=" space-y-2.5 overflow-y-scroll scrollbar-hidden h-full pr-1.5">
 			<div class="">
 				<div class="mb-3">
-					<div class=" mt-0.5 mb-2.5 text-base font-medium">{$i18n.t('General')}</div>
+					<div class=" mt-0.5 mb-2.5 text-base font-medium">{$i18n.t('Content Extraction')}</div>
 
 					<hr class=" border-gray-100/30 dark:border-gray-850/30 my-2" />
 
 					<div class="mb-2.5 flex flex-col w-full justify-between">
 						<div class="flex w-full justify-between mb-1">
 							<div class="self-center text-xs font-medium">
-								{$i18n.t('Content Extraction Engine')}
+								{$i18n.t('Engine')}
 							</div>
 							<div class="">
 								<select
@@ -710,6 +710,12 @@
 							</div>
 						{/if}
 					</div>
+				</div>
+
+				<div class="mb-3">
+					<div class=" mt-0.5 mb-2.5 text-base font-medium">{$i18n.t('Chunking')}</div>
+
+					<hr class=" border-gray-100/30 dark:border-gray-850/30 my-2" />
 
 					<div class="  mb-2.5 flex w-full justify-between">
 						<div class=" self-center text-xs font-medium">
@@ -733,35 +739,6 @@
 					</div>
 
 					{#if !RAGConfig.BYPASS_EMBEDDING_AND_RETRIEVAL}
-						<div class="  mb-2.5 flex w-full justify-between">
-							<div class=" self-center text-xs font-medium">{$i18n.t('Text Splitter')}</div>
-							<div class="flex items-center relative">
-								<select
-									class="dark:bg-gray-900 w-fit pr-8 rounded-sm px-2 text-xs bg-transparent outline-hidden text-right"
-									bind:value={RAGConfig.TEXT_SPLITTER}
-								>
-									<option value="">{$i18n.t('Default')} ({$i18n.t('Character')})</option>
-									<option value="token">{$i18n.t('Token')} ({$i18n.t('Tiktoken')})</option>
-								</select>
-							</div>
-						</div>
-
-						<div class="  mb-2.5 flex w-full justify-between">
-							<div class=" self-center text-xs font-medium">
-								<Tooltip
-									placement="top-start"
-									content={$i18n.t(
-										'Split documents by markdown headers before applying character/token splitting.'
-									)}
-								>
-									{$i18n.t('Markdown Header Text Splitter')}
-								</Tooltip>
-							</div>
-							<div class="flex items-center relative">
-								<Switch bind:state={RAGConfig.ENABLE_MARKDOWN_HEADER_TEXT_SPLITTER} />
-							</div>
-						</div>
-
 						<div class="  mb-2.5 flex w-full justify-between">
 							<div class=" flex gap-1.5 w-full">
 								<div class="  w-full justify-between">
@@ -796,37 +773,31 @@
 										/>
 									</div>
 								</div>
-							</div>
-						</div>
 
-						{#if RAGConfig.ENABLE_MARKDOWN_HEADER_TEXT_SPLITTER}
-							<div class="  mb-2.5 flex w-full justify-between">
-								<div class=" flex gap-1.5 w-full">
-									<div class="w-full">
-										<div class="self-center text-xs font-medium min-w-fit mb-1">
-											<Tooltip
-												placement="top-start"
-												content={$i18n.t(
-													'Chunks smaller than this threshold will be merged with neighboring chunks when possible. Set to 0 to disable merging.'
-												)}
-											>
-												{$i18n.t('Chunk Min Size Target')}
-											</Tooltip>
-										</div>
-										<div class="self-center">
-											<input
-												class="w-full rounded-lg py-1.5 px-4 text-sm bg-gray-50 dark:text-gray-300 dark:bg-gray-850 outline-hidden"
-												type="number"
-												placeholder={$i18n.t('Enter Chunk Min Size Target')}
-												bind:value={RAGConfig.CHUNK_MIN_SIZE_TARGET}
-												autocomplete="off"
-												min="0"
-											/>
-										</div>
+								<div class="w-full">
+									<div class="self-center text-xs font-medium min-w-fit mb-1">
+										<Tooltip
+											placement="top-start"
+											content={$i18n.t(
+												'Chunks smaller than this threshold will be merged with neighboring chunks when possible. Set to 0 to disable merging.'
+											)}
+										>
+											{$i18n.t('Chunk Min Size')}
+										</Tooltip>
+									</div>
+									<div class="self-center">
+										<input
+											class="w-full rounded-lg py-1.5 px-4 text-sm bg-gray-50 dark:text-gray-300 dark:bg-gray-850 outline-hidden"
+											type="number"
+											placeholder={$i18n.t('Enter Chunk Min Size')}
+											bind:value={RAGConfig.CHUNK_MIN_SIZE_TARGET}
+											autocomplete="off"
+											min="0"
+										/>
 									</div>
 								</div>
 							</div>
-						{/if}
+						</div>
 					{/if}
 				</div>
 
