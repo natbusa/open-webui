@@ -311,7 +311,9 @@ async def reindex_knowledge_files(
                         process_file,
                         request,
                         ProcessFileForm(
-                            file_id=file.id, collection_name=knowledge_base.id
+                            file_id=file.id,
+                            collection_name=knowledge_base.id,
+                            overwrite=True,
                         ),
                         user=user,
                         db=db,

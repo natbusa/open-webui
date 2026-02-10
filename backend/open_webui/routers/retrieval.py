@@ -1417,8 +1417,19 @@ def save_docs_to_vector_db(
         if result is not None and result.ids and len(result.ids) > 0:
             existing_doc_ids = result.ids[0]
             if existing_doc_ids:
-                log.info(f"Document with hash {metadata['hash']} already exists")
-                raise ValueError(ERROR_MESSAGES.DUPLICATE_CONTENT)
+                if overwrite:
+                    log.info(
+                        f"Document with hash {metadata['hash']} already exists, overwriting"
+                    )
+                    VECTOR_DB_CLIENT.delete(
+                        collection_name=collection_name,
+                        ids=existing_doc_ids,
+                    )
+                else:
+                    log.info(
+                        f"Document with hash {metadata['hash']} already exists"
+                    )
+                    raise ValueError(ERROR_MESSAGES.DUPLICATE_CONTENT)
 
     if split:
         if request.app.state.config.ENABLE_MARKDOWN_HEADER_TEXT_SPLITTER:
@@ -1589,6 +1600,7 @@ class ProcessFileForm(BaseModel):
     file_id: str
     content: Optional[str] = None
     collection_name: Optional[str] = None
+    overwrite: bool = False
 
 
 @router.post("/process/file")
@@ -1770,6 +1782,7 @@ def process_file(
                             "name": file.filename,
                             "hash": hash,
                         },
+                        overwrite=form_data.overwrite,
                         add=(True if form_data.collection_name else False),
                         user=user,
                     )
