@@ -2,1304 +2,1298 @@ import { WEBUI_BASE_URL } from '$lib/constants';
 import { getOpenAIModelsDirect } from './openai';
 
 export const getModels = async (
-	token: string = '',
-	connections: object | null = null,
-	base: boolean = false,
-	refresh: boolean = false
+  token: string = '',
+  connections: object | null = null,
+  base: boolean = false,
+  refresh: boolean = false
 ) => {
-	const searchParams = new URLSearchParams();
-	if (refresh) {
-		searchParams.append('refresh', 'true');
-	}
+  const searchParams = new URLSearchParams();
+  if (refresh) {
+    searchParams.append('refresh', 'true');
+  }
 
-	let error = null;
-	const res = await fetch(
-		`${WEBUI_BASE_URL}/api/models${base ? '/base' : ''}?${searchParams.toString()}`,
-		{
-			method: 'GET',
-			headers: {
-				Accept: 'application/json',
-				'Content-Type': 'application/json',
-				...(token && { authorization: `Bearer ${token}` })
-			}
-		}
-	)
-		.then(async (res) => {
-			if (!res.ok) throw await res.json();
-			return res.json();
-		})
-		.catch((err) => {
-			error = err;
-			console.error(err);
-			return null;
-		});
+  let error = null;
+  const res = await fetch(
+    `${WEBUI_BASE_URL}/api/models${base ? '/base' : ''}?${searchParams.toString()}`,
+    {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        ...(token && { authorization: `Bearer ${token}` })
+      }
+    }
+  )
+    .then(async (res) => {
+      if (!res.ok) throw await res.json();
+      return res.json();
+    })
+    .catch((err) => {
+      error = err;
+      console.error(err);
+      return null;
+    });
 
-	if (error) {
-		throw error;
-	}
+  if (error) {
+    throw error;
+  }
 
-	let models = res?.data ?? [];
+  let models = res?.data ?? [];
 
-	if (connections && !base) {
-		let localModels = [];
+  if (connections && !base) {
+    let localModels = [];
 
-		if (connections) {
-			const OPENAI_API_BASE_URLS = connections.OPENAI_API_BASE_URLS;
-			const OPENAI_API_KEYS = connections.OPENAI_API_KEYS;
-			const OPENAI_API_CONFIGS = connections.OPENAI_API_CONFIGS;
+    if (connections) {
+      const OPENAI_API_BASE_URLS = connections.OPENAI_API_BASE_URLS;
+      const OPENAI_API_KEYS = connections.OPENAI_API_KEYS;
+      const OPENAI_API_CONFIGS = connections.OPENAI_API_CONFIGS;
 
-			const requests = [];
-			for (const idx in OPENAI_API_BASE_URLS) {
-				const url = OPENAI_API_BASE_URLS[idx];
+      const requests = [];
+      for (const idx in OPENAI_API_BASE_URLS) {
+        const url = OPENAI_API_BASE_URLS[idx];
 
-				if (idx.toString() in OPENAI_API_CONFIGS) {
-					const apiConfig = OPENAI_API_CONFIGS[idx.toString()] ?? {};
+        if (idx.toString() in OPENAI_API_CONFIGS) {
+          const apiConfig = OPENAI_API_CONFIGS[idx.toString()] ?? {};
 
-					const enable = apiConfig?.enable ?? true;
-					const modelIds = apiConfig?.model_ids ?? [];
+          const enable = apiConfig?.enable ?? true;
+          const modelIds = apiConfig?.model_ids ?? [];
 
-					if (enable) {
-						if (modelIds.length > 0) {
-							const modelList = {
-								object: 'list',
-								data: modelIds.map((modelId) => ({
-									id: modelId,
-									name: modelId,
-									owned_by: 'openai',
-									openai: { id: modelId },
-									urlIdx: idx
-								}))
-							};
+          if (enable) {
+            if (modelIds.length > 0) {
+              const modelList = {
+                object: 'list',
+                data: modelIds.map((modelId) => ({
+                  id: modelId,
+                  name: modelId,
+                  owned_by: 'openai',
+                  openai: { id: modelId },
+                  urlIdx: idx
+                }))
+              };
 
-							requests.push(
-								(async () => {
-									return modelList;
-								})()
-							);
-						} else {
-							requests.push(
-								(async () => {
-									return await getOpenAIModelsDirect(url, OPENAI_API_KEYS[idx])
-										.then((res) => {
-											return res;
-										})
-										.catch((err) => {
-											return {
-												object: 'list',
-												data: [],
-												urlIdx: idx
-											};
-										});
-								})()
-							);
-						}
-					} else {
-						requests.push(
-							(async () => {
-								return {
-									object: 'list',
-									data: [],
-									urlIdx: idx
-								};
-							})()
-						);
-					}
-				}
-			}
+              requests.push(
+                (async () => {
+                  return modelList;
+                })()
+              );
+            } else {
+              requests.push(
+                (async () => {
+                  return await getOpenAIModelsDirect(url, OPENAI_API_KEYS[idx])
+                    .then((res) => {
+                      return res;
+                    })
+                    .catch((err) => {
+                      return {
+                        object: 'list',
+                        data: [],
+                        urlIdx: idx
+                      };
+                    });
+                })()
+              );
+            }
+          } else {
+            requests.push(
+              (async () => {
+                return {
+                  object: 'list',
+                  data: [],
+                  urlIdx: idx
+                };
+              })()
+            );
+          }
+        }
+      }
 
-			const responses = await Promise.all(requests);
+      const responses = await Promise.all(requests);
 
-			for (const idx in responses) {
-				const response = responses[idx];
-				const apiConfig = OPENAI_API_CONFIGS[idx.toString()] ?? {};
+      for (const idx in responses) {
+        const response = responses[idx];
+        const apiConfig = OPENAI_API_CONFIGS[idx.toString()] ?? {};
 
-				let models = Array.isArray(response) ? response : (response?.data ?? []);
-				models = models.map((model) => ({ ...model, openai: { id: model.id }, urlIdx: idx }));
+        let models = Array.isArray(response) ? response : (response?.data ?? []);
+        models = models.map((model) => ({ ...model, openai: { id: model.id }, urlIdx: idx }));
 
-				const prefixId = apiConfig.prefix_id;
-				if (prefixId) {
-					for (const model of models) {
-						model.id = `${prefixId}.${model.id}`;
-					}
-				}
+        const prefixId = apiConfig.prefix_id;
+        if (prefixId) {
+          for (const model of models) {
+            model.id = `${prefixId}.${model.id}`;
+          }
+        }
 
-				const tags = apiConfig.tags;
-				if (tags) {
-					for (const model of models) {
-						model.tags = tags;
-					}
-				}
+        const tags = apiConfig.tags;
+        if (tags) {
+          for (const model of models) {
+            model.tags = tags;
+          }
+        }
 
-				localModels = localModels.concat(models);
-			}
-		}
+        localModels = localModels.concat(models);
+      }
+    }
 
-		models = models.concat(
-			localModels.map((model) => ({
-				...model,
-				name: model?.name ?? model?.id,
-				direct: true
-			}))
-		);
+    models = models.concat(
+      localModels.map((model) => ({
+        ...model,
+        name: model?.name ?? model?.id,
+        direct: true
+      }))
+    );
 
-		// Remove duplicates
-		const modelsMap = {};
-		for (const model of models) {
-			modelsMap[model.id] = model;
-		}
+    // Remove duplicates
+    const modelsMap = {};
+    for (const model of models) {
+      modelsMap[model.id] = model;
+    }
 
-		models = Object.values(modelsMap);
-	}
+    models = Object.values(modelsMap);
+  }
 
-	return models;
+  return models;
 };
 
 type ChatCompletedForm = {
-	model: string;
-	messages: string[];
-	chat_id: string;
-	session_id: string;
+  model: string;
+  messages: string[];
+  chat_id: string;
+  session_id: string;
 };
 
 export const chatCompleted = async (token: string, body: ChatCompletedForm) => {
-	let error = null;
+  let error = null;
 
-	const res = await fetch(`${WEBUI_BASE_URL}/api/chat/completed`, {
-		method: 'POST',
-		headers: {
-			Accept: 'application/json',
-			'Content-Type': 'application/json',
-			...(token && { authorization: `Bearer ${token}` })
-		},
-		body: JSON.stringify(body)
-	})
-		.then(async (res) => {
-			if (!res.ok) throw await res.json();
-			return res.json();
-		})
-		.catch((err) => {
-			console.error(err);
-			if ('detail' in err) {
-				error = err.detail;
-			} else {
-				error = err;
-			}
-			return null;
-		});
+  const res = await fetch(`${WEBUI_BASE_URL}/api/chat/completed`, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      ...(token && { authorization: `Bearer ${token}` })
+    },
+    body: JSON.stringify(body)
+  })
+    .then(async (res) => {
+      if (!res.ok) throw await res.json();
+      return res.json();
+    })
+    .catch((err) => {
+      console.error(err);
+      if ('detail' in err) {
+        error = err.detail;
+      } else {
+        error = err;
+      }
+      return null;
+    });
 
-	if (error) {
-		throw error;
-	}
+  if (error) {
+    throw error;
+  }
 
-	return res;
+  return res;
 };
 
-
 export const stopTask = async (token: string, id: string) => {
-	let error = null;
+  let error = null;
 
-	const res = await fetch(`${WEBUI_BASE_URL}/api/tasks/stop/${id}`, {
-		method: 'POST',
-		headers: {
-			Accept: 'application/json',
-			'Content-Type': 'application/json',
-			...(token && { authorization: `Bearer ${token}` })
-		}
-	})
-		.then(async (res) => {
-			if (!res.ok) throw await res.json();
-			return res.json();
-		})
-		.catch((err) => {
-			console.error(err);
-			if ('detail' in err) {
-				error = err.detail;
-			} else {
-				error = err;
-			}
-			return null;
-		});
+  const res = await fetch(`${WEBUI_BASE_URL}/api/tasks/stop/${id}`, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      ...(token && { authorization: `Bearer ${token}` })
+    }
+  })
+    .then(async (res) => {
+      if (!res.ok) throw await res.json();
+      return res.json();
+    })
+    .catch((err) => {
+      console.error(err);
+      if ('detail' in err) {
+        error = err.detail;
+      } else {
+        error = err;
+      }
+      return null;
+    });
 
-	if (error) {
-		throw error;
-	}
+  if (error) {
+    throw error;
+  }
 
-	return res;
+  return res;
 };
 
 export const getTaskIdsByChatId = async (token: string, chat_id: string) => {
-	let error = null;
+  let error = null;
 
-	const res = await fetch(`${WEBUI_BASE_URL}/api/tasks/chat/${chat_id}`, {
-		method: 'GET',
-		headers: {
-			Accept: 'application/json',
-			'Content-Type': 'application/json',
-			...(token && { authorization: `Bearer ${token}` })
-		}
-	})
-		.then(async (res) => {
-			if (!res.ok) throw await res.json();
-			return res.json();
-		})
-		.catch((err) => {
-			console.error(err);
-			if ('detail' in err) {
-				error = err.detail;
-			} else {
-				error = err;
-			}
-			return null;
-		});
+  const res = await fetch(`${WEBUI_BASE_URL}/api/tasks/chat/${chat_id}`, {
+    method: 'GET',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      ...(token && { authorization: `Bearer ${token}` })
+    }
+  })
+    .then(async (res) => {
+      if (!res.ok) throw await res.json();
+      return res.json();
+    })
+    .catch((err) => {
+      console.error(err);
+      if ('detail' in err) {
+        error = err.detail;
+      } else {
+        error = err;
+      }
+      return null;
+    });
 
-	if (error) {
-		throw error;
-	}
+  if (error) {
+    throw error;
+  }
 
-	return res;
+  return res;
 };
 
 export const getTaskConfig = async (token: string = '') => {
-	let error = null;
+  let error = null;
 
-	const res = await fetch(`${WEBUI_BASE_URL}/api/v1/tasks/config`, {
-		method: 'GET',
-		headers: {
-			Accept: 'application/json',
-			'Content-Type': 'application/json',
-			...(token && { authorization: `Bearer ${token}` })
-		}
-	})
-		.then(async (res) => {
-			if (!res.ok) throw await res.json();
-			return res.json();
-		})
-		.catch((err) => {
-			console.error(err);
-			error = err;
-			return null;
-		});
+  const res = await fetch(`${WEBUI_BASE_URL}/api/v1/tasks/config`, {
+    method: 'GET',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      ...(token && { authorization: `Bearer ${token}` })
+    }
+  })
+    .then(async (res) => {
+      if (!res.ok) throw await res.json();
+      return res.json();
+    })
+    .catch((err) => {
+      console.error(err);
+      error = err;
+      return null;
+    });
 
-	if (error) {
-		throw error;
-	}
+  if (error) {
+    throw error;
+  }
 
-	return res;
+  return res;
 };
 
 export const updateTaskConfig = async (token: string, config: object) => {
-	let error = null;
+  let error = null;
 
-	const res = await fetch(`${WEBUI_BASE_URL}/api/v1/tasks/config/update`, {
-		method: 'POST',
-		headers: {
-			Accept: 'application/json',
-			'Content-Type': 'application/json',
-			...(token && { authorization: `Bearer ${token}` })
-		},
-		body: JSON.stringify(config)
-	})
-		.then(async (res) => {
-			if (!res.ok) throw await res.json();
-			return res.json();
-		})
-		.catch((err) => {
-			console.error(err);
-			if ('detail' in err) {
-				error = err.detail;
-			} else {
-				error = err;
-			}
-			return null;
-		});
+  const res = await fetch(`${WEBUI_BASE_URL}/api/v1/tasks/config/update`, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      ...(token && { authorization: `Bearer ${token}` })
+    },
+    body: JSON.stringify(config)
+  })
+    .then(async (res) => {
+      if (!res.ok) throw await res.json();
+      return res.json();
+    })
+    .catch((err) => {
+      console.error(err);
+      if ('detail' in err) {
+        error = err.detail;
+      } else {
+        error = err;
+      }
+      return null;
+    });
 
-	if (error) {
-		throw error;
-	}
+  if (error) {
+    throw error;
+  }
 
-	return res;
+  return res;
 };
 
 export const generateTitle = async (
-	token: string = '',
-	model: string,
-	messages: object[],
-	chat_id?: string
+  token: string = '',
+  model: string,
+  messages: object[],
+  chat_id?: string
 ) => {
-	let error = null;
+  let error = null;
 
-	const res = await fetch(`${WEBUI_BASE_URL}/api/v1/tasks/title/completions`, {
-		method: 'POST',
-		headers: {
-			Accept: 'application/json',
-			'Content-Type': 'application/json',
-			Authorization: `Bearer ${token}`
-		},
-		body: JSON.stringify({
-			model: model,
-			messages: messages,
-			...(chat_id && { chat_id: chat_id })
-		})
-	})
-		.then(async (res) => {
-			if (!res.ok) throw await res.json();
-			return res.json();
-		})
-		.catch((err) => {
-			console.error(err);
-			if ('detail' in err) {
-				error = err.detail;
-			}
-			return null;
-		});
+  const res = await fetch(`${WEBUI_BASE_URL}/api/v1/tasks/title/completions`, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({
+      model: model,
+      messages: messages,
+      ...(chat_id && { chat_id: chat_id })
+    })
+  })
+    .then(async (res) => {
+      if (!res.ok) throw await res.json();
+      return res.json();
+    })
+    .catch((err) => {
+      console.error(err);
+      if ('detail' in err) {
+        error = err.detail;
+      }
+      return null;
+    });
 
-	if (error) {
-		throw error;
-	}
+  if (error) {
+    throw error;
+  }
 
-	try {
-		// Step 1: Safely extract the response string
-		const response = res?.choices[0]?.message?.content ?? '';
+  try {
+    // Step 1: Safely extract the response string
+    const response = res?.choices[0]?.message?.content ?? '';
 
-		// Step 2: Attempt to fix common JSON format issues like single quotes
-		const sanitizedResponse = response.replace(/['‘’`]/g, '"'); // Convert single quotes to double quotes for valid JSON
+    // Step 2: Attempt to fix common JSON format issues like single quotes
+    const sanitizedResponse = response.replace(/['‘’`]/g, '"'); // Convert single quotes to double quotes for valid JSON
 
-		// Step 3: Find the relevant JSON block within the response
-		const jsonStartIndex = sanitizedResponse.indexOf('{');
-		const jsonEndIndex = sanitizedResponse.lastIndexOf('}');
+    // Step 3: Find the relevant JSON block within the response
+    const jsonStartIndex = sanitizedResponse.indexOf('{');
+    const jsonEndIndex = sanitizedResponse.lastIndexOf('}');
 
-		// Step 4: Check if we found a valid JSON block (with both `{` and `}`)
-		if (jsonStartIndex !== -1 && jsonEndIndex !== -1) {
-			const jsonResponse = sanitizedResponse.substring(jsonStartIndex, jsonEndIndex + 1);
+    // Step 4: Check if we found a valid JSON block (with both `{` and `}`)
+    if (jsonStartIndex !== -1 && jsonEndIndex !== -1) {
+      const jsonResponse = sanitizedResponse.substring(jsonStartIndex, jsonEndIndex + 1);
 
-			// Step 5: Parse the JSON block
-			const parsed = JSON.parse(jsonResponse);
+      // Step 5: Parse the JSON block
+      const parsed = JSON.parse(jsonResponse);
 
-			// Step 6: If there's a "title" key, return the title stripped of emojis
-			if (parsed && parsed.title) {
-				return parsed.title.replace(/\p{Extended_Pictographic}/gu, '').trim();
-			} else {
-				return null;
-			}
-		}
+      // Step 6: If there's a "title" key, return the title stripped of emojis
+      if (parsed && parsed.title) {
+        return parsed.title.replace(/\p{Extended_Pictographic}/gu, '').trim();
+      } else {
+        return null;
+      }
+    }
 
-		// If no valid JSON block found, return an empty array
-		return null;
-	} catch (e) {
-		// Catch and safely return empty array on any parsing errors
-		console.error('Failed to parse response: ', e);
-		return null;
-	}
+    // If no valid JSON block found, return an empty array
+    return null;
+  } catch (e) {
+    // Catch and safely return empty array on any parsing errors
+    console.error('Failed to parse response: ', e);
+    return null;
+  }
 };
 
 export const generateFollowUps = async (
-	token: string = '',
-	model: string,
-	messages: string,
-	chat_id?: string
+  token: string = '',
+  model: string,
+  messages: string,
+  chat_id?: string
 ) => {
-	let error = null;
+  let error = null;
 
-	const res = await fetch(`${WEBUI_BASE_URL}/api/v1/tasks/follow_ups/completions`, {
-		method: 'POST',
-		headers: {
-			Accept: 'application/json',
-			'Content-Type': 'application/json',
-			Authorization: `Bearer ${token}`
-		},
-		body: JSON.stringify({
-			model: model,
-			messages: messages,
-			...(chat_id && { chat_id: chat_id })
-		})
-	})
-		.then(async (res) => {
-			if (!res.ok) throw await res.json();
-			return res.json();
-		})
-		.catch((err) => {
-			console.error(err);
-			if ('detail' in err) {
-				error = err.detail;
-			}
-			return null;
-		});
+  const res = await fetch(`${WEBUI_BASE_URL}/api/v1/tasks/follow_ups/completions`, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({
+      model: model,
+      messages: messages,
+      ...(chat_id && { chat_id: chat_id })
+    })
+  })
+    .then(async (res) => {
+      if (!res.ok) throw await res.json();
+      return res.json();
+    })
+    .catch((err) => {
+      console.error(err);
+      if ('detail' in err) {
+        error = err.detail;
+      }
+      return null;
+    });
 
-	if (error) {
-		throw error;
-	}
+  if (error) {
+    throw error;
+  }
 
-	try {
-		// Step 1: Safely extract the response string
-		const response = res?.choices[0]?.message?.content ?? '';
+  try {
+    // Step 1: Safely extract the response string
+    const response = res?.choices[0]?.message?.content ?? '';
 
-		// Step 2: Attempt to fix common JSON format issues like single quotes
-		const sanitizedResponse = response.replace(/['‘’`]/g, '"'); // Convert single quotes to double quotes for valid JSON
+    // Step 2: Attempt to fix common JSON format issues like single quotes
+    const sanitizedResponse = response.replace(/['‘’`]/g, '"'); // Convert single quotes to double quotes for valid JSON
 
-		// Step 3: Find the relevant JSON block within the response
-		const jsonStartIndex = sanitizedResponse.indexOf('{');
-		const jsonEndIndex = sanitizedResponse.lastIndexOf('}');
+    // Step 3: Find the relevant JSON block within the response
+    const jsonStartIndex = sanitizedResponse.indexOf('{');
+    const jsonEndIndex = sanitizedResponse.lastIndexOf('}');
 
-		// Step 4: Check if we found a valid JSON block (with both `{` and `}`)
-		if (jsonStartIndex !== -1 && jsonEndIndex !== -1) {
-			const jsonResponse = sanitizedResponse.substring(jsonStartIndex, jsonEndIndex + 1);
+    // Step 4: Check if we found a valid JSON block (with both `{` and `}`)
+    if (jsonStartIndex !== -1 && jsonEndIndex !== -1) {
+      const jsonResponse = sanitizedResponse.substring(jsonStartIndex, jsonEndIndex + 1);
 
-			// Step 5: Parse the JSON block
-			const parsed = JSON.parse(jsonResponse);
+      // Step 5: Parse the JSON block
+      const parsed = JSON.parse(jsonResponse);
 
-			// Step 6: If there's a "follow_ups" key, return the follow_ups array stripped of emojis
-			if (parsed && parsed.follow_ups) {
-				return Array.isArray(parsed.follow_ups)
-					? parsed.follow_ups.map((q: string) =>
-							q.replace(/\p{Extended_Pictographic}/gu, '').trim()
-						)
-					: [];
-			} else {
-				return [];
-			}
-		}
+      // Step 6: If there's a "follow_ups" key, return the follow_ups array stripped of emojis
+      if (parsed && parsed.follow_ups) {
+        return Array.isArray(parsed.follow_ups)
+          ? parsed.follow_ups.map((q: string) =>
+              q.replace(/\p{Extended_Pictographic}/gu, '').trim()
+            )
+          : [];
+      } else {
+        return [];
+      }
+    }
 
-		// If no valid JSON block found, return an empty array
-		return [];
-	} catch (e) {
-		// Catch and safely return empty array on any parsing errors
-		console.error('Failed to parse response: ', e);
-		return [];
-	}
+    // If no valid JSON block found, return an empty array
+    return [];
+  } catch (e) {
+    // Catch and safely return empty array on any parsing errors
+    console.error('Failed to parse response: ', e);
+    return [];
+  }
 };
 
 export const generateTags = async (
-	token: string = '',
-	model: string,
-	messages: string,
-	chat_id?: string
+  token: string = '',
+  model: string,
+  messages: string,
+  chat_id?: string
 ) => {
-	let error = null;
+  let error = null;
 
-	const res = await fetch(`${WEBUI_BASE_URL}/api/v1/tasks/tags/completions`, {
-		method: 'POST',
-		headers: {
-			Accept: 'application/json',
-			'Content-Type': 'application/json',
-			Authorization: `Bearer ${token}`
-		},
-		body: JSON.stringify({
-			model: model,
-			messages: messages,
-			...(chat_id && { chat_id: chat_id })
-		})
-	})
-		.then(async (res) => {
-			if (!res.ok) throw await res.json();
-			return res.json();
-		})
-		.catch((err) => {
-			console.error(err);
-			if ('detail' in err) {
-				error = err.detail;
-			}
-			return null;
-		});
+  const res = await fetch(`${WEBUI_BASE_URL}/api/v1/tasks/tags/completions`, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({
+      model: model,
+      messages: messages,
+      ...(chat_id && { chat_id: chat_id })
+    })
+  })
+    .then(async (res) => {
+      if (!res.ok) throw await res.json();
+      return res.json();
+    })
+    .catch((err) => {
+      console.error(err);
+      if ('detail' in err) {
+        error = err.detail;
+      }
+      return null;
+    });
 
-	if (error) {
-		throw error;
-	}
+  if (error) {
+    throw error;
+  }
 
-	try {
-		// Step 1: Safely extract the response string
-		const response = res?.choices[0]?.message?.content ?? '';
+  try {
+    // Step 1: Safely extract the response string
+    const response = res?.choices[0]?.message?.content ?? '';
 
-		// Step 2: Attempt to fix common JSON format issues like single quotes
-		const sanitizedResponse = response.replace(/['‘’`]/g, '"'); // Convert single quotes to double quotes for valid JSON
+    // Step 2: Attempt to fix common JSON format issues like single quotes
+    const sanitizedResponse = response.replace(/['‘’`]/g, '"'); // Convert single quotes to double quotes for valid JSON
 
-		// Step 3: Find the relevant JSON block within the response
-		const jsonStartIndex = sanitizedResponse.indexOf('{');
-		const jsonEndIndex = sanitizedResponse.lastIndexOf('}');
+    // Step 3: Find the relevant JSON block within the response
+    const jsonStartIndex = sanitizedResponse.indexOf('{');
+    const jsonEndIndex = sanitizedResponse.lastIndexOf('}');
 
-		// Step 4: Check if we found a valid JSON block (with both `{` and `}`)
-		if (jsonStartIndex !== -1 && jsonEndIndex !== -1) {
-			const jsonResponse = sanitizedResponse.substring(jsonStartIndex, jsonEndIndex + 1);
+    // Step 4: Check if we found a valid JSON block (with both `{` and `}`)
+    if (jsonStartIndex !== -1 && jsonEndIndex !== -1) {
+      const jsonResponse = sanitizedResponse.substring(jsonStartIndex, jsonEndIndex + 1);
 
-			// Step 5: Parse the JSON block
-			const parsed = JSON.parse(jsonResponse);
+      // Step 5: Parse the JSON block
+      const parsed = JSON.parse(jsonResponse);
 
-			// Step 6: If there's a "tags" key, return the tags array stripped of emojis
-			if (parsed && parsed.tags) {
-				return Array.isArray(parsed.tags)
-					? parsed.tags.map((tag: string) =>
-							tag.replace(/\p{Extended_Pictographic}/gu, '').trim()
-						)
-					: [];
-			} else {
-				return [];
-			}
-		}
+      // Step 6: If there's a "tags" key, return the tags array stripped of emojis
+      if (parsed && parsed.tags) {
+        return Array.isArray(parsed.tags)
+          ? parsed.tags.map((tag: string) => tag.replace(/\p{Extended_Pictographic}/gu, '').trim())
+          : [];
+      } else {
+        return [];
+      }
+    }
 
-		// If no valid JSON block found, return an empty array
-		return [];
-	} catch (e) {
-		// Catch and safely return empty array on any parsing errors
-		console.error('Failed to parse response: ', e);
-		return [];
-	}
+    // If no valid JSON block found, return an empty array
+    return [];
+  } catch (e) {
+    // Catch and safely return empty array on any parsing errors
+    console.error('Failed to parse response: ', e);
+    return [];
+  }
 };
 
 export const generateQueries = async (
-	token: string = '',
-	model: string,
-	messages: object[],
-	prompt: string,
-	type: string = 'web_search'
+  token: string = '',
+  model: string,
+  messages: object[],
+  prompt: string,
+  type: string = 'web_search'
 ) => {
-	let error = null;
+  let error = null;
 
-	const res = await fetch(`${WEBUI_BASE_URL}/api/v1/tasks/queries/completions`, {
-		method: 'POST',
-		headers: {
-			Accept: 'application/json',
-			'Content-Type': 'application/json',
-			Authorization: `Bearer ${token}`
-		},
-		body: JSON.stringify({
-			model: model,
-			messages: messages,
-			prompt: prompt,
-			type: type
-		})
-	})
-		.then(async (res) => {
-			if (!res.ok) throw await res.json();
-			return res.json();
-		})
-		.catch((err) => {
-			console.error(err);
-			if ('detail' in err) {
-				error = err.detail;
-			}
-			return null;
-		});
+  const res = await fetch(`${WEBUI_BASE_URL}/api/v1/tasks/queries/completions`, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({
+      model: model,
+      messages: messages,
+      prompt: prompt,
+      type: type
+    })
+  })
+    .then(async (res) => {
+      if (!res.ok) throw await res.json();
+      return res.json();
+    })
+    .catch((err) => {
+      console.error(err);
+      if ('detail' in err) {
+        error = err.detail;
+      }
+      return null;
+    });
 
-	if (error) {
-		throw error;
-	}
+  if (error) {
+    throw error;
+  }
 
-	// Step 1: Safely extract the response string
-	const response = res?.choices[0]?.message?.content ?? '';
+  // Step 1: Safely extract the response string
+  const response = res?.choices[0]?.message?.content ?? '';
 
-	try {
-		const jsonStartIndex = response.indexOf('{');
-		const jsonEndIndex = response.lastIndexOf('}');
+  try {
+    const jsonStartIndex = response.indexOf('{');
+    const jsonEndIndex = response.lastIndexOf('}');
 
-		if (jsonStartIndex !== -1 && jsonEndIndex !== -1) {
-			const jsonResponse = response.substring(jsonStartIndex, jsonEndIndex + 1);
+    if (jsonStartIndex !== -1 && jsonEndIndex !== -1) {
+      const jsonResponse = response.substring(jsonStartIndex, jsonEndIndex + 1);
 
-			// Step 5: Parse the JSON block
-			const parsed = JSON.parse(jsonResponse);
+      // Step 5: Parse the JSON block
+      const parsed = JSON.parse(jsonResponse);
 
-			// Step 6: If there's a "queries" key, return the queries array stripped of emojis
-			if (parsed && parsed.queries) {
-				return Array.isArray(parsed.queries)
-					? parsed.queries.map((q: string) =>
-							q.replace(/\p{Extended_Pictographic}/gu, '').trim()
-						)
-					: [];
-			} else {
-				return [];
-			}
-		}
+      // Step 6: If there's a "queries" key, return the queries array stripped of emojis
+      if (parsed && parsed.queries) {
+        return Array.isArray(parsed.queries)
+          ? parsed.queries.map((q: string) => q.replace(/\p{Extended_Pictographic}/gu, '').trim())
+          : [];
+      } else {
+        return [];
+      }
+    }
 
-		// If no valid JSON block found, return response as is
-		return [response];
-	} catch (e) {
-		// Catch and safely return empty array on any parsing errors
-		console.error('Failed to parse response: ', e);
-		return [response];
-	}
+    // If no valid JSON block found, return response as is
+    return [response];
+  } catch (e) {
+    // Catch and safely return empty array on any parsing errors
+    console.error('Failed to parse response: ', e);
+    return [response];
+  }
 };
 
 export const generateAutoCompletion = async (
-	token: string = '',
-	model: string,
-	prompt: string,
-	messages?: object[],
-	type: string = 'search query'
+  token: string = '',
+  model: string,
+  prompt: string,
+  messages?: object[],
+  type: string = 'search query'
 ) => {
-	const controller = new AbortController();
-	let error = null;
+  const controller = new AbortController();
+  let error = null;
 
-	const res = await fetch(`${WEBUI_BASE_URL}/api/v1/tasks/auto/completions`, {
-		signal: controller.signal,
-		method: 'POST',
-		headers: {
-			Accept: 'application/json',
-			'Content-Type': 'application/json',
-			Authorization: `Bearer ${token}`
-		},
-		body: JSON.stringify({
-			model: model,
-			prompt: prompt,
-			...(messages && { messages: messages }),
-			type: type,
-			stream: false
-		})
-	})
-		.then(async (res) => {
-			if (!res.ok) throw await res.json();
-			return res.json();
-		})
-		.catch((err) => {
-			console.error(err);
-			if ('detail' in err) {
-				error = err.detail;
-			}
-			return null;
-		});
+  const res = await fetch(`${WEBUI_BASE_URL}/api/v1/tasks/auto/completions`, {
+    signal: controller.signal,
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({
+      model: model,
+      prompt: prompt,
+      ...(messages && { messages: messages }),
+      type: type,
+      stream: false
+    })
+  })
+    .then(async (res) => {
+      if (!res.ok) throw await res.json();
+      return res.json();
+    })
+    .catch((err) => {
+      console.error(err);
+      if ('detail' in err) {
+        error = err.detail;
+      }
+      return null;
+    });
 
-	if (error) {
-		throw error;
-	}
+  if (error) {
+    throw error;
+  }
 
-	const response = res?.choices[0]?.message?.content ?? '';
+  const response = res?.choices[0]?.message?.content ?? '';
 
-	try {
-		const jsonStartIndex = response.indexOf('{');
-		const jsonEndIndex = response.lastIndexOf('}');
+  try {
+    const jsonStartIndex = response.indexOf('{');
+    const jsonEndIndex = response.lastIndexOf('}');
 
-		if (jsonStartIndex !== -1 && jsonEndIndex !== -1) {
-			const jsonResponse = response.substring(jsonStartIndex, jsonEndIndex + 1);
+    if (jsonStartIndex !== -1 && jsonEndIndex !== -1) {
+      const jsonResponse = response.substring(jsonStartIndex, jsonEndIndex + 1);
 
-			// Step 5: Parse the JSON block
-			const parsed = JSON.parse(jsonResponse);
+      // Step 5: Parse the JSON block
+      const parsed = JSON.parse(jsonResponse);
 
-			// Step 6: If there's a "text" key, return the text stripped of emojis
-			if (parsed && parsed.text) {
-				return parsed.text.replace(/\p{Extended_Pictographic}/gu, '').trim();
-			} else {
-				return '';
-			}
-		}
+      // Step 6: If there's a "text" key, return the text stripped of emojis
+      if (parsed && parsed.text) {
+        return parsed.text.replace(/\p{Extended_Pictographic}/gu, '').trim();
+      } else {
+        return '';
+      }
+    }
 
-		// If no valid JSON block found, return response as is
-		return response;
-	} catch (e) {
-		// Catch and safely return empty array on any parsing errors
-		console.error('Failed to parse response: ', e);
-		return response;
-	}
+    // If no valid JSON block found, return response as is
+    return response;
+  } catch (e) {
+    // Catch and safely return empty array on any parsing errors
+    console.error('Failed to parse response: ', e);
+    return response;
+  }
 };
 
 export const getPipelinesList = async (token: string = '') => {
-	let error = null;
+  let error = null;
 
-	const res = await fetch(`${WEBUI_BASE_URL}/api/v1/pipelines/list`, {
-		method: 'GET',
-		headers: {
-			Accept: 'application/json',
-			'Content-Type': 'application/json',
-			...(token && { authorization: `Bearer ${token}` })
-		}
-	})
-		.then(async (res) => {
-			if (!res.ok) throw await res.json();
-			return res.json();
-		})
-		.catch((err) => {
-			console.error(err);
-			error = err;
-			return null;
-		});
+  const res = await fetch(`${WEBUI_BASE_URL}/api/v1/pipelines/list`, {
+    method: 'GET',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      ...(token && { authorization: `Bearer ${token}` })
+    }
+  })
+    .then(async (res) => {
+      if (!res.ok) throw await res.json();
+      return res.json();
+    })
+    .catch((err) => {
+      console.error(err);
+      error = err;
+      return null;
+    });
 
-	if (error) {
-		throw error;
-	}
+  if (error) {
+    throw error;
+  }
 
-	const pipelines = res?.data ?? [];
-	return pipelines;
+  const pipelines = res?.data ?? [];
+  return pipelines;
 };
 
 export const uploadPipeline = async (token: string, file: File, urlIdx: string) => {
-	let error = null;
+  let error = null;
 
-	// Create a new FormData object to handle the file upload
-	const formData = new FormData();
-	formData.append('file', file);
-	formData.append('urlIdx', urlIdx);
+  // Create a new FormData object to handle the file upload
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('urlIdx', urlIdx);
 
-	const res = await fetch(`${WEBUI_BASE_URL}/api/v1/pipelines/upload`, {
-		method: 'POST',
-		headers: {
-			...(token && { authorization: `Bearer ${token}` })
-			// 'Content-Type': 'multipart/form-data' is not needed as Fetch API will set it automatically
-		},
-		body: formData
-	})
-		.then(async (res) => {
-			if (!res.ok) throw await res.json();
-			return res.json();
-		})
-		.catch((err) => {
-			console.error(err);
-			if ('detail' in err) {
-				error = err.detail;
-			} else {
-				error = err;
-			}
-			return null;
-		});
+  const res = await fetch(`${WEBUI_BASE_URL}/api/v1/pipelines/upload`, {
+    method: 'POST',
+    headers: {
+      ...(token && { authorization: `Bearer ${token}` })
+      // 'Content-Type': 'multipart/form-data' is not needed as Fetch API will set it automatically
+    },
+    body: formData
+  })
+    .then(async (res) => {
+      if (!res.ok) throw await res.json();
+      return res.json();
+    })
+    .catch((err) => {
+      console.error(err);
+      if ('detail' in err) {
+        error = err.detail;
+      } else {
+        error = err;
+      }
+      return null;
+    });
 
-	if (error) {
-		throw error;
-	}
+  if (error) {
+    throw error;
+  }
 
-	return res;
+  return res;
 };
 
 export const downloadPipeline = async (token: string, url: string, urlIdx: string) => {
-	let error = null;
+  let error = null;
 
-	const res = await fetch(`${WEBUI_BASE_URL}/api/v1/pipelines/add`, {
-		method: 'POST',
-		headers: {
-			Accept: 'application/json',
-			'Content-Type': 'application/json',
-			...(token && { authorization: `Bearer ${token}` })
-		},
-		body: JSON.stringify({
-			url: url,
-			urlIdx: urlIdx
-		})
-	})
-		.then(async (res) => {
-			if (!res.ok) throw await res.json();
-			return res.json();
-		})
-		.catch((err) => {
-			console.error(err);
-			if ('detail' in err) {
-				error = err.detail;
-			} else {
-				error = err;
-			}
-			return null;
-		});
+  const res = await fetch(`${WEBUI_BASE_URL}/api/v1/pipelines/add`, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      ...(token && { authorization: `Bearer ${token}` })
+    },
+    body: JSON.stringify({
+      url: url,
+      urlIdx: urlIdx
+    })
+  })
+    .then(async (res) => {
+      if (!res.ok) throw await res.json();
+      return res.json();
+    })
+    .catch((err) => {
+      console.error(err);
+      if ('detail' in err) {
+        error = err.detail;
+      } else {
+        error = err;
+      }
+      return null;
+    });
 
-	if (error) {
-		throw error;
-	}
+  if (error) {
+    throw error;
+  }
 
-	return res;
+  return res;
 };
 
 export const deletePipeline = async (token: string, id: string, urlIdx: string) => {
-	let error = null;
+  let error = null;
 
-	const res = await fetch(`${WEBUI_BASE_URL}/api/v1/pipelines/delete`, {
-		method: 'DELETE',
-		headers: {
-			Accept: 'application/json',
-			'Content-Type': 'application/json',
-			...(token && { authorization: `Bearer ${token}` })
-		},
-		body: JSON.stringify({
-			id: id,
-			urlIdx: urlIdx
-		})
-	})
-		.then(async (res) => {
-			if (!res.ok) throw await res.json();
-			return res.json();
-		})
-		.catch((err) => {
-			console.error(err);
-			if ('detail' in err) {
-				error = err.detail;
-			} else {
-				error = err;
-			}
-			return null;
-		});
+  const res = await fetch(`${WEBUI_BASE_URL}/api/v1/pipelines/delete`, {
+    method: 'DELETE',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      ...(token && { authorization: `Bearer ${token}` })
+    },
+    body: JSON.stringify({
+      id: id,
+      urlIdx: urlIdx
+    })
+  })
+    .then(async (res) => {
+      if (!res.ok) throw await res.json();
+      return res.json();
+    })
+    .catch((err) => {
+      console.error(err);
+      if ('detail' in err) {
+        error = err.detail;
+      } else {
+        error = err;
+      }
+      return null;
+    });
 
-	if (error) {
-		throw error;
-	}
+  if (error) {
+    throw error;
+  }
 
-	return res;
+  return res;
 };
 
 export const getPipelines = async (token: string, urlIdx?: string) => {
-	let error = null;
+  let error = null;
 
-	const searchParams = new URLSearchParams();
-	if (urlIdx !== undefined) {
-		searchParams.append('urlIdx', urlIdx);
-	}
+  const searchParams = new URLSearchParams();
+  if (urlIdx !== undefined) {
+    searchParams.append('urlIdx', urlIdx);
+  }
 
-	const res = await fetch(`${WEBUI_BASE_URL}/api/v1/pipelines/?${searchParams.toString()}`, {
-		method: 'GET',
-		headers: {
-			Accept: 'application/json',
-			'Content-Type': 'application/json',
-			...(token && { authorization: `Bearer ${token}` })
-		}
-	})
-		.then(async (res) => {
-			if (!res.ok) throw await res.json();
-			return res.json();
-		})
-		.catch((err) => {
-			console.error(err);
-			error = err;
-			return null;
-		});
+  const res = await fetch(`${WEBUI_BASE_URL}/api/v1/pipelines/?${searchParams.toString()}`, {
+    method: 'GET',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      ...(token && { authorization: `Bearer ${token}` })
+    }
+  })
+    .then(async (res) => {
+      if (!res.ok) throw await res.json();
+      return res.json();
+    })
+    .catch((err) => {
+      console.error(err);
+      error = err;
+      return null;
+    });
 
-	if (error) {
-		throw error;
-	}
+  if (error) {
+    throw error;
+  }
 
-	const pipelines = res?.data ?? [];
-	return pipelines;
+  const pipelines = res?.data ?? [];
+  return pipelines;
 };
 
 export const getPipelineValves = async (token: string, pipeline_id: string, urlIdx: string) => {
-	let error = null;
+  let error = null;
 
-	const searchParams = new URLSearchParams();
-	if (urlIdx !== undefined) {
-		searchParams.append('urlIdx', urlIdx);
-	}
+  const searchParams = new URLSearchParams();
+  if (urlIdx !== undefined) {
+    searchParams.append('urlIdx', urlIdx);
+  }
 
-	const res = await fetch(
-		`${WEBUI_BASE_URL}/api/v1/pipelines/${pipeline_id}/valves?${searchParams.toString()}`,
-		{
-			method: 'GET',
-			headers: {
-				Accept: 'application/json',
-				'Content-Type': 'application/json',
-				...(token && { authorization: `Bearer ${token}` })
-			}
-		}
-	)
-		.then(async (res) => {
-			if (!res.ok) throw await res.json();
-			return res.json();
-		})
-		.catch((err) => {
-			console.error(err);
-			error = err;
-			return null;
-		});
+  const res = await fetch(
+    `${WEBUI_BASE_URL}/api/v1/pipelines/${pipeline_id}/valves?${searchParams.toString()}`,
+    {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        ...(token && { authorization: `Bearer ${token}` })
+      }
+    }
+  )
+    .then(async (res) => {
+      if (!res.ok) throw await res.json();
+      return res.json();
+    })
+    .catch((err) => {
+      console.error(err);
+      error = err;
+      return null;
+    });
 
-	if (error) {
-		throw error;
-	}
+  if (error) {
+    throw error;
+  }
 
-	return res;
+  return res;
 };
 
 export const getPipelineValvesSpec = async (token: string, pipeline_id: string, urlIdx: string) => {
-	let error = null;
+  let error = null;
 
-	const searchParams = new URLSearchParams();
-	if (urlIdx !== undefined) {
-		searchParams.append('urlIdx', urlIdx);
-	}
+  const searchParams = new URLSearchParams();
+  if (urlIdx !== undefined) {
+    searchParams.append('urlIdx', urlIdx);
+  }
 
-	const res = await fetch(
-		`${WEBUI_BASE_URL}/api/v1/pipelines/${pipeline_id}/valves/spec?${searchParams.toString()}`,
-		{
-			method: 'GET',
-			headers: {
-				Accept: 'application/json',
-				'Content-Type': 'application/json',
-				...(token && { authorization: `Bearer ${token}` })
-			}
-		}
-	)
-		.then(async (res) => {
-			if (!res.ok) throw await res.json();
-			return res.json();
-		})
-		.catch((err) => {
-			console.error(err);
-			error = err;
-			return null;
-		});
+  const res = await fetch(
+    `${WEBUI_BASE_URL}/api/v1/pipelines/${pipeline_id}/valves/spec?${searchParams.toString()}`,
+    {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        ...(token && { authorization: `Bearer ${token}` })
+      }
+    }
+  )
+    .then(async (res) => {
+      if (!res.ok) throw await res.json();
+      return res.json();
+    })
+    .catch((err) => {
+      console.error(err);
+      error = err;
+      return null;
+    });
 
-	if (error) {
-		throw error;
-	}
+  if (error) {
+    throw error;
+  }
 
-	return res;
+  return res;
 };
 
 export const updatePipelineValves = async (
-	token: string = '',
-	pipeline_id: string,
-	valves: object,
-	urlIdx: string
+  token: string = '',
+  pipeline_id: string,
+  valves: object,
+  urlIdx: string
 ) => {
-	let error = null;
+  let error = null;
 
-	const searchParams = new URLSearchParams();
-	if (urlIdx !== undefined) {
-		searchParams.append('urlIdx', urlIdx);
-	}
+  const searchParams = new URLSearchParams();
+  if (urlIdx !== undefined) {
+    searchParams.append('urlIdx', urlIdx);
+  }
 
-	const res = await fetch(
-		`${WEBUI_BASE_URL}/api/v1/pipelines/${pipeline_id}/valves/update?${searchParams.toString()}`,
-		{
-			method: 'POST',
-			headers: {
-				Accept: 'application/json',
-				'Content-Type': 'application/json',
-				...(token && { authorization: `Bearer ${token}` })
-			},
-			body: JSON.stringify(valves)
-		}
-	)
-		.then(async (res) => {
-			if (!res.ok) throw await res.json();
-			return res.json();
-		})
-		.catch((err) => {
-			console.error(err);
+  const res = await fetch(
+    `${WEBUI_BASE_URL}/api/v1/pipelines/${pipeline_id}/valves/update?${searchParams.toString()}`,
+    {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        ...(token && { authorization: `Bearer ${token}` })
+      },
+      body: JSON.stringify(valves)
+    }
+  )
+    .then(async (res) => {
+      if (!res.ok) throw await res.json();
+      return res.json();
+    })
+    .catch((err) => {
+      console.error(err);
 
-			if ('detail' in err) {
-				error = err.detail;
-			} else {
-				error = err;
-			}
-			return null;
-		});
+      if ('detail' in err) {
+        error = err.detail;
+      } else {
+        error = err;
+      }
+      return null;
+    });
 
-	if (error) {
-		throw error;
-	}
+  if (error) {
+    throw error;
+  }
 
-	return res;
+  return res;
 };
 
 export const getUsage = async (token: string = '') => {
-	let error = null;
+  let error = null;
 
-	const res = await fetch(`${WEBUI_BASE_URL}/api/usage`, {
-		method: 'GET',
-		headers: {
-			'Content-Type': 'application/json',
-			...(token && { Authorization: `Bearer ${token}` })
-		}
-	})
-		.then(async (res) => {
-			if (!res.ok) throw await res.json();
-			return res.json();
-		})
-		.catch((err) => {
-			console.error(err);
-			error = err;
-			return null;
-		});
+  const res = await fetch(`${WEBUI_BASE_URL}/api/usage`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token && { Authorization: `Bearer ${token}` })
+    }
+  })
+    .then(async (res) => {
+      if (!res.ok) throw await res.json();
+      return res.json();
+    })
+    .catch((err) => {
+      console.error(err);
+      error = err;
+      return null;
+    });
 
-	if (error) {
-		throw error;
-	}
+  if (error) {
+    throw error;
+  }
 
-	return res;
+  return res;
 };
 
 export const getBackendConfig = async () => {
-	let error = null;
+  let error = null;
 
-	const res = await fetch(`${WEBUI_BASE_URL}/api/config`, {
-		method: 'GET',
-		credentials: 'include',
-		headers: {
-			'Content-Type': 'application/json'
-		}
-	})
-		.then(async (res) => {
-			if (!res.ok) throw await res.json();
-			return res.json();
-		})
-		.catch((err) => {
-			console.error(err);
-			error = err;
-			return null;
-		});
+  const res = await fetch(`${WEBUI_BASE_URL}/api/config`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  })
+    .then(async (res) => {
+      if (!res.ok) throw await res.json();
+      return res.json();
+    })
+    .catch((err) => {
+      console.error(err);
+      error = err;
+      return null;
+    });
 
-	if (error) {
-		throw error;
-	}
+  if (error) {
+    throw error;
+  }
 
-	return res;
+  return res;
 };
 
 export const getChangelog = async () => {
-	let error = null;
+  let error = null;
 
-	const res = await fetch(`${WEBUI_BASE_URL}/api/changelog`, {
-		method: 'GET',
-		headers: {
-			'Content-Type': 'application/json'
-		}
-	})
-		.then(async (res) => {
-			if (!res.ok) throw await res.json();
-			return res.json();
-		})
-		.catch((err) => {
-			console.error(err);
-			error = err;
-			return null;
-		});
+  const res = await fetch(`${WEBUI_BASE_URL}/api/changelog`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  })
+    .then(async (res) => {
+      if (!res.ok) throw await res.json();
+      return res.json();
+    })
+    .catch((err) => {
+      console.error(err);
+      error = err;
+      return null;
+    });
 
-	if (error) {
-		throw error;
-	}
+  if (error) {
+    throw error;
+  }
 
-	return res;
+  return res;
 };
 
 export const getVersion = async (token: string) => {
-	let error = null;
+  let error = null;
 
-	const res = await fetch(`${WEBUI_BASE_URL}/api/version`, {
-		method: 'GET',
-		headers: {
-			'Content-Type': 'application/json',
-			Authorization: `Bearer ${token}`
-		}
-	})
-		.then(async (res) => {
-			if (!res.ok) throw await res.json();
-			return res.json();
-		})
-		.catch((err) => {
-			console.error(err);
-			error = err;
-			return null;
-		});
+  const res = await fetch(`${WEBUI_BASE_URL}/api/version`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`
+    }
+  })
+    .then(async (res) => {
+      if (!res.ok) throw await res.json();
+      return res.json();
+    })
+    .catch((err) => {
+      console.error(err);
+      error = err;
+      return null;
+    });
 
-	if (error) {
-		throw error;
-	}
+  if (error) {
+    throw error;
+  }
 
-	return res;
+  return res;
 };
 
-
 export const getModelFilterConfig = async (token: string) => {
-	let error = null;
+  let error = null;
 
-	const res = await fetch(`${WEBUI_BASE_URL}/api/config/model/filter`, {
-		method: 'GET',
-		headers: {
-			'Content-Type': 'application/json',
-			Authorization: `Bearer ${token}`
-		}
-	})
-		.then(async (res) => {
-			if (!res.ok) throw await res.json();
-			return res.json();
-		})
-		.catch((err) => {
-			console.error(err);
-			error = err;
-			return null;
-		});
+  const res = await fetch(`${WEBUI_BASE_URL}/api/config/model/filter`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`
+    }
+  })
+    .then(async (res) => {
+      if (!res.ok) throw await res.json();
+      return res.json();
+    })
+    .catch((err) => {
+      console.error(err);
+      error = err;
+      return null;
+    });
 
-	if (error) {
-		throw error;
-	}
+  if (error) {
+    throw error;
+  }
 
-	return res;
+  return res;
 };
 
 export const updateModelFilterConfig = async (
-	token: string,
-	enabled: boolean,
-	models: string[]
+  token: string,
+  enabled: boolean,
+  models: string[]
 ) => {
-	let error = null;
+  let error = null;
 
-	const res = await fetch(`${WEBUI_BASE_URL}/api/config/model/filter`, {
-		method: 'POST',
-		headers: {
-			'Content-Type': 'application/json',
-			Authorization: `Bearer ${token}`
-		},
-		body: JSON.stringify({
-			enabled: enabled,
-			models: models
-		})
-	})
-		.then(async (res) => {
-			if (!res.ok) throw await res.json();
-			return res.json();
-		})
-		.catch((err) => {
-			console.error(err);
-			error = err;
-			return null;
-		});
+  const res = await fetch(`${WEBUI_BASE_URL}/api/config/model/filter`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({
+      enabled: enabled,
+      models: models
+    })
+  })
+    .then(async (res) => {
+      if (!res.ok) throw await res.json();
+      return res.json();
+    })
+    .catch((err) => {
+      console.error(err);
+      error = err;
+      return null;
+    });
 
-	if (error) {
-		throw error;
-	}
+  if (error) {
+    throw error;
+  }
 
-	return res;
+  return res;
 };
 
 export const getWebhookUrl = async (token: string) => {
-	let error = null;
+  let error = null;
 
-	const res = await fetch(`${WEBUI_BASE_URL}/api/webhook`, {
-		method: 'GET',
-		headers: {
-			'Content-Type': 'application/json',
-			Authorization: `Bearer ${token}`
-		}
-	})
-		.then(async (res) => {
-			if (!res.ok) throw await res.json();
-			return res.json();
-		})
-		.catch((err) => {
-			console.error(err);
-			error = err;
-			return null;
-		});
+  const res = await fetch(`${WEBUI_BASE_URL}/api/webhook`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`
+    }
+  })
+    .then(async (res) => {
+      if (!res.ok) throw await res.json();
+      return res.json();
+    })
+    .catch((err) => {
+      console.error(err);
+      error = err;
+      return null;
+    });
 
-	if (error) {
-		throw error;
-	}
+  if (error) {
+    throw error;
+  }
 
-	return res.url;
+  return res.url;
 };
 
 export const updateWebhookUrl = async (token: string, url: string) => {
-	let error = null;
+  let error = null;
 
-	const res = await fetch(`${WEBUI_BASE_URL}/api/webhook`, {
-		method: 'POST',
-		headers: {
-			'Content-Type': 'application/json',
-			Authorization: `Bearer ${token}`
-		},
-		body: JSON.stringify({
-			url: url
-		})
-	})
-		.then(async (res) => {
-			if (!res.ok) throw await res.json();
-			return res.json();
-		})
-		.catch((err) => {
-			console.error(err);
-			error = err;
-			return null;
-		});
+  const res = await fetch(`${WEBUI_BASE_URL}/api/webhook`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({
+      url: url
+    })
+  })
+    .then(async (res) => {
+      if (!res.ok) throw await res.json();
+      return res.json();
+    })
+    .catch((err) => {
+      console.error(err);
+      error = err;
+      return null;
+    });
 
-	if (error) {
-		throw error;
-	}
+  if (error) {
+    throw error;
+  }
 
-	return res.url;
+  return res.url;
 };
 
 export const getCommunitySharingEnabledStatus = async (token: string) => {
-	let error = null;
+  let error = null;
 
-	const res = await fetch(`${WEBUI_BASE_URL}/api/community_sharing`, {
-		method: 'GET',
-		headers: {
-			'Content-Type': 'application/json',
-			Authorization: `Bearer ${token}`
-		}
-	})
-		.then(async (res) => {
-			if (!res.ok) throw await res.json();
-			return res.json();
-		})
-		.catch((err) => {
-			console.error(err);
-			error = err;
-			return null;
-		});
+  const res = await fetch(`${WEBUI_BASE_URL}/api/community_sharing`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`
+    }
+  })
+    .then(async (res) => {
+      if (!res.ok) throw await res.json();
+      return res.json();
+    })
+    .catch((err) => {
+      console.error(err);
+      error = err;
+      return null;
+    });
 
-	if (error) {
-		throw error;
-	}
+  if (error) {
+    throw error;
+  }
 
-	return res;
+  return res;
 };
 
 export const toggleCommunitySharingEnabledStatus = async (token: string) => {
-	let error = null;
+  let error = null;
 
-	const res = await fetch(`${WEBUI_BASE_URL}/api/community_sharing/toggle`, {
-		method: 'GET',
-		headers: {
-			'Content-Type': 'application/json',
-			Authorization: `Bearer ${token}`
-		}
-	})
-		.then(async (res) => {
-			if (!res.ok) throw await res.json();
-			return res.json();
-		})
-		.catch((err) => {
-			console.error(err);
-			error = err.detail;
-			return null;
-		});
+  const res = await fetch(`${WEBUI_BASE_URL}/api/community_sharing/toggle`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`
+    }
+  })
+    .then(async (res) => {
+      if (!res.ok) throw await res.json();
+      return res.json();
+    })
+    .catch((err) => {
+      console.error(err);
+      error = err.detail;
+      return null;
+    });
 
-	if (error) {
-		throw error;
-	}
+  if (error) {
+    throw error;
+  }
 
-	return res;
+  return res;
 };
 
 export const getModelConfig = async (token: string): Promise<GlobalModelConfig> => {
-	let error = null;
+  let error = null;
 
-	const res = await fetch(`${WEBUI_BASE_URL}/api/config/models`, {
-		method: 'GET',
-		headers: {
-			'Content-Type': 'application/json',
-			Authorization: `Bearer ${token}`
-		}
-	})
-		.then(async (res) => {
-			if (!res.ok) throw await res.json();
-			return res.json();
-		})
-		.catch((err) => {
-			console.error(err);
-			error = err;
-			return null;
-		});
+  const res = await fetch(`${WEBUI_BASE_URL}/api/config/models`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`
+    }
+  })
+    .then(async (res) => {
+      if (!res.ok) throw await res.json();
+      return res.json();
+    })
+    .catch((err) => {
+      console.error(err);
+      error = err;
+      return null;
+    });
 
-	if (error) {
-		throw error;
-	}
+  if (error) {
+    throw error;
+  }
 
-	return res.models;
+  return res.models;
 };
 
 export interface ModelConfig {
-	id: string;
-	name: string;
-	meta: ModelMeta;
-	base_model_id?: string;
-	params: ModelParams;
+  id: string;
+  name: string;
+  meta: ModelMeta;
+  base_model_id?: string;
+  params: ModelParams;
 }
 
 export interface ModelMeta {
-	toolIds: never[];
-	description?: string;
-	capabilities?: object;
-	profile_image_url?: string;
+  toolIds: never[];
+  description?: string;
+  capabilities?: object;
+  profile_image_url?: string;
 }
 
 export interface ModelParams {}
@@ -1307,31 +1301,31 @@ export interface ModelParams {}
 export type GlobalModelConfig = ModelConfig[];
 
 export const updateModelConfig = async (token: string, config: GlobalModelConfig) => {
-	let error = null;
+  let error = null;
 
-	const res = await fetch(`${WEBUI_BASE_URL}/api/config/models`, {
-		method: 'POST',
-		headers: {
-			'Content-Type': 'application/json',
-			Authorization: `Bearer ${token}`
-		},
-		body: JSON.stringify({
-			models: config
-		})
-	})
-		.then(async (res) => {
-			if (!res.ok) throw await res.json();
-			return res.json();
-		})
-		.catch((err) => {
-			console.error(err);
-			error = err;
-			return null;
-		});
+  const res = await fetch(`${WEBUI_BASE_URL}/api/config/models`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({
+      models: config
+    })
+  })
+    .then(async (res) => {
+      if (!res.ok) throw await res.json();
+      return res.json();
+    })
+    .catch((err) => {
+      console.error(err);
+      error = err;
+      return null;
+    });
 
-	if (error) {
-		throw error;
-	}
+  if (error) {
+    throw error;
+  }
 
-	return res;
+  return res;
 };

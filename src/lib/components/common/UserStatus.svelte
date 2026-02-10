@@ -1,77 +1,77 @@
 <script lang="ts">
-	import { getContext, onMount } from 'svelte';
+  import { getContext, onMount } from 'svelte';
 
-	const i18n = getContext('i18n');
+  const i18n = getContext('i18n');
 
-	import { user as _user } from '$lib/stores';
-	import { WEBUI_API_BASE_URL, WEBUI_BASE_URL } from '$lib/constants';
+  import { user as _user } from '$lib/stores';
+  import { WEBUI_API_BASE_URL, WEBUI_BASE_URL } from '$lib/constants';
 
-	import Tooltip from '$lib/components/common/Tooltip.svelte';
+  import Tooltip from '$lib/components/common/Tooltip.svelte';
 
-	export let user = null;
+  export let user = null;
 </script>
 
 {#if user}
-	<div class="py-3">
-		<div class=" flex gap-3.5 w-full px-3 items-center">
-			<div class=" items-center flex shrink-0">
-				<img
-					src={`${WEBUI_API_BASE_URL}/users/${user?.id}/profile/image`}
-					class=" size-14 object-cover rounded-xl"
-					alt="profile"
-				/>
-			</div>
+  <div class="py-3">
+    <div class=" flex gap-3.5 w-full px-3 items-center">
+      <div class=" items-center flex shrink-0">
+        <img
+          src={`${WEBUI_API_BASE_URL}/users/${user?.id}/profile/image`}
+          class=" size-14 object-cover rounded-xl"
+          alt="profile"
+        />
+      </div>
 
-			<div class=" flex flex-col w-full flex-1">
-				<div class="mb-0.5 font-medium line-clamp-1 pr-2">
-					{user.name}
-				</div>
+      <div class=" flex flex-col w-full flex-1">
+        <div class="mb-0.5 font-medium line-clamp-1 pr-2">
+          {user.name}
+        </div>
 
-				<div class=" flex items-center gap-2">
-					{#if user?.is_active}
-						<div>
-							<span class="relative flex size-2">
-								<span
-									class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"
-								></span>
-								<span class="relative inline-flex rounded-full size-2 bg-green-500"></span>
-							</span>
-						</div>
+        <div class=" flex items-center gap-2">
+          {#if user?.is_active}
+            <div>
+              <span class="relative flex size-2">
+                <span
+                  class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"
+                ></span>
+                <span class="relative inline-flex rounded-full size-2 bg-green-500"></span>
+              </span>
+            </div>
 
-						<span class="text-xs"> {$i18n.t('Active')} </span>
-					{:else}
-						<div>
-							<span class="relative flex size-2">
-								<span class="relative inline-flex rounded-full size-2 bg-gray-500"></span>
-							</span>
-						</div>
+            <span class="text-xs"> {$i18n.t('Active')} </span>
+          {:else}
+            <div>
+              <span class="relative flex size-2">
+                <span class="relative inline-flex rounded-full size-2 bg-gray-500"></span>
+              </span>
+            </div>
 
-						<span class="text-xs"> {$i18n.t('Away')} </span>
-					{/if}
-				</div>
-			</div>
-		</div>
+            <span class="text-xs"> {$i18n.t('Away')} </span>
+          {/if}
+        </div>
+      </div>
+    </div>
 
-		{#if user?.bio}
-			<div class="mx-3.5 mt-2">
-				<Tooltip content={user?.bio}>
-					<div class=" self-center line-clamp-3 flex-1 text-left text-xs">
-						{user?.bio}
-					</div>
-				</Tooltip>
-			</div>
-		{/if}
+    {#if user?.bio}
+      <div class="mx-3.5 mt-2">
+        <Tooltip content={user?.bio}>
+          <div class=" self-center line-clamp-3 flex-1 text-left text-xs">
+            {user?.bio}
+          </div>
+        </Tooltip>
+      </div>
+    {/if}
 
-		{#if (user?.groups ?? []).length > 0}
-			<div class="mx-3.5 mt-2 flex gap-0.5">
-				{#each user.groups as group}
-					<div
-						class="px-1.5 py-0.5 rounded-lg bg-gray-50 dark:text-white dark:bg-gray-900/50 text-black transition text-xs"
-					>
-						{group.name}
-					</div>
-				{/each}
-			</div>
-		{/if}
-	</div>
+    {#if (user?.groups ?? []).length > 0}
+      <div class="mx-3.5 mt-2 flex gap-0.5">
+        {#each user.groups as group}
+          <div
+            class="px-1.5 py-0.5 rounded-lg bg-gray-50 dark:text-white dark:bg-gray-900/50 text-black transition text-xs"
+          >
+            {group.name}
+          </div>
+        {/each}
+      </div>
+    {/if}
+  </div>
 {/if}

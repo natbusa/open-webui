@@ -1,230 +1,228 @@
 <script lang="ts">
-	import { getContext } from 'svelte';
-	import CitationModal from './Citations/CitationModal.svelte';
-	import ImagePreviewModal from './Citations/ImagePreviewModal.svelte';
-	import { WEBUI_API_BASE_URL } from '$lib/constants';
+  import { getContext } from 'svelte';
+  import CitationModal from './Citations/CitationModal.svelte';
+  import ImagePreviewModal from './Citations/ImagePreviewModal.svelte';
+  import { WEBUI_API_BASE_URL } from '$lib/constants';
 
-	const i18n = getContext('i18n');
+  const i18n = getContext('i18n');
 
-	export let id = '';
+  export let id = '';
 
-	export let sources = [];
+  export let sources = [];
 
-	let citations = [];
-	let showPercentage = false;
-	let showRelevance = true;
+  let citations = [];
+  let showPercentage = false;
+  let showRelevance = true;
 
-	let citationModal = null;
+  let citationModal = null;
 
-	let showCitations = false;
-	let showCitationModal = false;
+  let showCitations = false;
+  let showCitationModal = false;
 
-	let selectedCitation: any = null;
+  let selectedCitation: any = null;
 
-	let showImagePreview = false;
-	let previewImageSrc = '';
-	let previewImageAlt = '';
+  let showImagePreview = false;
+  let previewImageSrc = '';
+  let previewImageAlt = '';
 
-	export const showSourceModal = (sourceId) => {
-		let index;
-		let suffix = null;
+  export const showSourceModal = (sourceId) => {
+    let index;
+    let suffix = null;
 
-		if (typeof sourceId === 'string') {
-			const output = sourceId.split('#');
-			index = parseInt(output[0]) - 1;
+    if (typeof sourceId === 'string') {
+      const output = sourceId.split('#');
+      index = parseInt(output[0]) - 1;
 
-			if (output.length > 1) {
-				suffix = output[1];
-			}
-		} else {
-			index = sourceId - 1;
-		}
+      if (output.length > 1) {
+        suffix = output[1];
+      }
+    } else {
+      index = sourceId - 1;
+    }
 
-		if (citations[index]) {
-			console.log('Showing citation modal for:', citations[index]);
+    if (citations[index]) {
+      console.log('Showing citation modal for:', citations[index]);
 
-			selectedCitation = citations[index];
-			showCitationModal = true;
-		}
-	};
+      selectedCitation = citations[index];
+      showCitationModal = true;
+    }
+  };
 
-	function calculateShowRelevance(sources: any[]) {
-		const distances = sources.flatMap((citation) => citation.distances ?? []);
-		const inRange = distances.filter((d) => d !== undefined && d >= -1 && d <= 1).length;
-		const outOfRange = distances.filter((d) => d !== undefined && (d < -1 || d > 1)).length;
+  function calculateShowRelevance(sources: any[]) {
+    const distances = sources.flatMap((citation) => citation.distances ?? []);
+    const inRange = distances.filter((d) => d !== undefined && d >= -1 && d <= 1).length;
+    const outOfRange = distances.filter((d) => d !== undefined && (d < -1 || d > 1)).length;
 
-		if (distances.length === 0) {
-			return false;
-		}
+    if (distances.length === 0) {
+      return false;
+    }
 
-		if (
-			(inRange === distances.length - 1 && outOfRange === 1) ||
-			(outOfRange === distances.length - 1 && inRange === 1)
-		) {
-			return false;
-		}
+    if (
+      (inRange === distances.length - 1 && outOfRange === 1) ||
+      (outOfRange === distances.length - 1 && inRange === 1)
+    ) {
+      return false;
+    }
 
-		return true;
-	}
+    return true;
+  }
 
-	function shouldShowPercentage(sources: any[]) {
-		const distances = sources.flatMap((citation) => citation.distances ?? []);
-		return distances.every((d) => d !== undefined && d >= -1 && d <= 1);
-	}
+  function shouldShowPercentage(sources: any[]) {
+    const distances = sources.flatMap((citation) => citation.distances ?? []);
+    return distances.every((d) => d !== undefined && d >= -1 && d <= 1);
+  }
 
-	$: {
-		citations = sources.reduce((acc, source) => {
-			if (Object.keys(source).length === 0) {
-				return acc;
-			}
+  $: {
+    citations = sources.reduce((acc, source) => {
+      if (Object.keys(source).length === 0) {
+        return acc;
+      }
 
-			source?.document?.forEach((document, index) => {
-				const metadata = source?.metadata?.[index];
-				const distance = source?.distances?.[index];
+      source?.document?.forEach((document, index) => {
+        const metadata = source?.metadata?.[index];
+        const distance = source?.distances?.[index];
 
-				// Within the same citation there could be multiple documents
-				const id = metadata?.source ?? source?.source?.id ?? 'N/A';
-				let _source = source?.source;
+        // Within the same citation there could be multiple documents
+        const id = metadata?.source ?? source?.source?.id ?? 'N/A';
+        let _source = source?.source;
 
-				if (metadata?.name) {
-					_source = { ..._source, name: metadata.name };
-				}
+        if (metadata?.name) {
+          _source = { ..._source, name: metadata.name };
+        }
 
-				if (id.startsWith('http://') || id.startsWith('https://')) {
-					_source = { ..._source, name: id, url: id };
-				}
+        if (id.startsWith('http://') || id.startsWith('https://')) {
+          _source = { ..._source, name: id, url: id };
+        }
 
-				const existingSource = acc.find((item) => item.id === id);
+        const existingSource = acc.find((item) => item.id === id);
 
-				if (existingSource) {
-					existingSource.document.push(document);
-					existingSource.metadata.push(metadata);
-					if (distance !== undefined) existingSource.distances.push(distance);
-					// Merge images from additional sources, deduplicating by image_file_id
-					for (const img of source?.images ?? []) {
-						if (!existingSource.images.some((e) => e.image_file_id === img.image_file_id)) {
-							existingSource.images.push(img);
-						}
-					}
-				} else {
-					acc.push({
-						id: id,
-						source: _source,
-						document: [document],
-						metadata: metadata ? [metadata] : [],
-						distances: distance !== undefined ? [distance] : [],
-						images: source?.images ?? []
-					});
-				}
-			});
+        if (existingSource) {
+          existingSource.document.push(document);
+          existingSource.metadata.push(metadata);
+          if (distance !== undefined) existingSource.distances.push(distance);
+          // Merge images from additional sources, deduplicating by image_file_id
+          for (const img of source?.images ?? []) {
+            if (!existingSource.images.some((e) => e.image_file_id === img.image_file_id)) {
+              existingSource.images.push(img);
+            }
+          }
+        } else {
+          acc.push({
+            id: id,
+            source: _source,
+            document: [document],
+            metadata: metadata ? [metadata] : [],
+            distances: distance !== undefined ? [distance] : [],
+            images: source?.images ?? []
+          });
+        }
+      });
 
-			return acc;
-		}, []);
-		console.log('citations', citations);
+      return acc;
+    }, []);
+    console.log('citations', citations);
 
-		showRelevance = calculateShowRelevance(citations);
-		showPercentage = shouldShowPercentage(citations);
-	}
+    showRelevance = calculateShowRelevance(citations);
+    showPercentage = shouldShowPercentage(citations);
+  }
 
-	const decodeString = (str: string) => {
-		try {
-			return decodeURIComponent(str);
-		} catch (e) {
-			return str;
-		}
-	};
+  const decodeString = (str: string) => {
+    try {
+      return decodeURIComponent(str);
+    } catch (e) {
+      return str;
+    }
+  };
 </script>
 
 <CitationModal
-	bind:show={showCitationModal}
-	citation={selectedCitation}
-	{showPercentage}
-	{showRelevance}
+  bind:show={showCitationModal}
+  citation={selectedCitation}
+  {showPercentage}
+  {showRelevance}
 />
 
 <ImagePreviewModal bind:show={showImagePreview} src={previewImageSrc} alt={previewImageAlt} />
 
 {#if citations.length > 0}
-	{@const urlCitations = citations.filter((c) => c?.source?.name?.startsWith('http'))}
-	<div class=" py-1 -mx-0.5 w-full flex gap-1 items-center flex-wrap">
-		<button
-			class="text-xs font-medium text-gray-600 dark:text-gray-300 px-3.5 h-8 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition flex items-center gap-1 border border-gray-50 dark:border-gray-850/30"
-			on:click={() => {
-				showCitations = !showCitations;
-			}}
-		>
-			{#if urlCitations.length > 0}
-				<div class="flex -space-x-1 items-center">
-					{#each urlCitations.slice(0, 3) as citation, idx}
-						<img
-							src="https://www.google.com/s2/favicons?sz=32&domain={citation.source.name}"
-							alt="favicon"
-							class="size-4 rounded-full shrink-0 border border-white dark:border-gray-850 bg-white dark:bg-gray-900"
-						/>
-					{/each}
-				</div>
-			{/if}
-			<div>
-				{#if citations.length === 1}
-					{$i18n.t('1 Source')}
-				{:else}
-					{$i18n.t('{{COUNT}} Sources', {
-						COUNT: citations.length
-					})}
-				{/if}
-			</div>
-		</button>
-	</div>
+  {@const urlCitations = citations.filter((c) => c?.source?.name?.startsWith('http'))}
+  <div class=" py-1 -mx-0.5 w-full flex gap-1 items-center flex-wrap">
+    <button
+      class="text-xs font-medium text-gray-600 dark:text-gray-300 px-3.5 h-8 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition flex items-center gap-1 border border-gray-50 dark:border-gray-850/30"
+      on:click={() => {
+        showCitations = !showCitations;
+      }}
+    >
+      {#if urlCitations.length > 0}
+        <div class="flex -space-x-1 items-center">
+          {#each urlCitations.slice(0, 3) as citation, idx}
+            <img
+              src="https://www.google.com/s2/favicons?sz=32&domain={citation.source.name}"
+              alt="favicon"
+              class="size-4 rounded-full shrink-0 border border-white dark:border-gray-850 bg-white dark:bg-gray-900"
+            />
+          {/each}
+        </div>
+      {/if}
+      <div>
+        {#if citations.length === 1}
+          {$i18n.t('1 Source')}
+        {:else}
+          {$i18n.t('{{COUNT}} Sources', {
+            COUNT: citations.length
+          })}
+        {/if}
+      </div>
+    </button>
+  </div>
 
-	{@const allImages = citations
-		.flatMap((c) => c.images ?? [])
-		.filter(
-			(img, idx, arr) => arr.findIndex((i) => i.image_file_id === img.image_file_id) === idx
-		)}
-	{#if allImages.length > 0}
-		<div class="flex gap-2 flex-wrap mt-1">
-			{#each allImages as image}
-				<button
-					class="cursor-pointer"
-					on:click={() => {
-						previewImageSrc = `${WEBUI_API_BASE_URL}/files/${image.image_file_id}/content`;
-						previewImageAlt = image.filename;
-						showImagePreview = true;
-					}}
-				>
-					<img
-						src={`${WEBUI_API_BASE_URL}/files/${image.image_file_id}/content`}
-						alt={image.filename}
-						class="h-24 rounded-lg border dark:border-gray-700 hover:opacity-80 transition object-cover"
-					/>
-				</button>
-			{/each}
-		</div>
-	{/if}
+  {@const allImages = citations
+    .flatMap((c) => c.images ?? [])
+    .filter((img, idx, arr) => arr.findIndex((i) => i.image_file_id === img.image_file_id) === idx)}
+  {#if allImages.length > 0}
+    <div class="flex gap-2 flex-wrap mt-1">
+      {#each allImages as image}
+        <button
+          class="cursor-pointer"
+          on:click={() => {
+            previewImageSrc = `${WEBUI_API_BASE_URL}/files/${image.image_file_id}/content`;
+            previewImageAlt = image.filename;
+            showImagePreview = true;
+          }}
+        >
+          <img
+            src={`${WEBUI_API_BASE_URL}/files/${image.image_file_id}/content`}
+            alt={image.filename}
+            class="h-24 rounded-lg border dark:border-gray-700 hover:opacity-80 transition object-cover"
+          />
+        </button>
+      {/each}
+    </div>
+  {/if}
 {/if}
 
 {#if showCitations}
-	<div class="py-1.5">
-		<div class="text-xs gap-2 flex flex-col">
-			{#each citations as citation, idx}
-				<button
-					id={`source-${id}-${idx + 1}`}
-					class="no-toggle outline-hidden flex dark:text-gray-300 bg-transparent text-gray-600 rounded-xl gap-1.5 items-center"
-					on:click={() => {
-						showCitationModal = true;
-						selectedCitation = citation;
-					}}
-				>
-					<div class=" font-medium bg-gray-50 dark:bg-gray-850 rounded-md px-1">
-						{idx + 1}
-					</div>
-					<div
-						class="flex-1 truncate hover:text-black dark:text-white/60 dark:hover:text-white transition text-left"
-					>
-						{decodeString(citation.source.name)}
-					</div>
-				</button>
-			{/each}
-		</div>
-	</div>
+  <div class="py-1.5">
+    <div class="text-xs gap-2 flex flex-col">
+      {#each citations as citation, idx}
+        <button
+          id={`source-${id}-${idx + 1}`}
+          class="no-toggle outline-hidden flex dark:text-gray-300 bg-transparent text-gray-600 rounded-xl gap-1.5 items-center"
+          on:click={() => {
+            showCitationModal = true;
+            selectedCitation = citation;
+          }}
+        >
+          <div class=" font-medium bg-gray-50 dark:bg-gray-850 rounded-md px-1">
+            {idx + 1}
+          </div>
+          <div
+            class="flex-1 truncate hover:text-black dark:text-white/60 dark:hover:text-white transition text-left"
+          >
+            {decodeString(citation.source.name)}
+          </div>
+        </button>
+      {/each}
+    </div>
+  </div>
 {/if}
