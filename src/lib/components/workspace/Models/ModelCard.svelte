@@ -201,23 +201,21 @@
 							</div>
 						</Tooltip>
 
-						<div>·</div>
+						{#if (model?.meta?.description ?? '').trim()}
+							<div>·</div>
 
-						<Tooltip
-							content={marked.parse(model?.meta?.description ?? model.id)}
-							className=" w-fit text-left"
-							placement="top-start"
-						>
-							<div class="flex gap-1 text-xs overflow-hidden">
-								<div class="line-clamp-1">
-									{#if (model?.meta?.description ?? '').trim()}
+							<Tooltip
+								content={marked.parse(model?.meta?.description)}
+								className=" w-fit text-left"
+								placement="top-start"
+							>
+								<div class="flex gap-1 text-xs overflow-hidden">
+									<div class="line-clamp-1">
 										{model?.meta?.description}
-									{:else}
-										{model.id}
-									{/if}
+									</div>
 								</div>
-							</div>
-						</Tooltip>
+							</Tooltip>
+						{/if}
 					</div>
 				</div>
 			</div>
