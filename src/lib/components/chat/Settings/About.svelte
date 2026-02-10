@@ -76,7 +76,8 @@
         Modified by
         <a
           class="text-gray-500 dark:text-gray-300 font-medium"
-          href="mailto:natalino.busa@gmail.com">Nate Busa</a
+          href="https://natbusa.github.io"
+          target="_blank">Nate Busa</a
         >
         with assistance from
         <a
