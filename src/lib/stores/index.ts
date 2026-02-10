@@ -139,7 +139,6 @@ type OllamaModelDetails = {
 type Settings = {
 	pinnedModels?: never[];
 	showChangelog?: boolean;
-	showEmojiInCall?: boolean;
 	voiceInterruption?: boolean;
 	collapseCodeBlocks?: boolean;
 	expandDetails?: boolean;

@@ -271,15 +271,6 @@ def image_prompt_generation_template(
     return template
 
 
-def emoji_generation_template(
-    template: str, prompt: str, user: Optional[Any] = None
-) -> str:
-    template = replace_prompt_variable(template, prompt)
-    template = prompt_template(template, user)
-
-    return template
-
-
 def autocomplete_generation_template(
     template: str,
     prompt: str,
@@ -303,43 +294,6 @@ def query_generation_template(
     template = replace_messages_variable(template, messages)
 
     template = prompt_template(template, user)
-    return template
-
-
-def moa_response_generation_template(
-    template: str, prompt: str, responses: list[str]
-) -> str:
-    def replacement_function(match):
-        full_match = match.group(0)
-        start_length = match.group(1)
-        end_length = match.group(2)
-        middle_length = match.group(3)
-
-        if full_match == "{{prompt}}":
-            return prompt
-        elif start_length is not None:
-            return prompt[: int(start_length)]
-        elif end_length is not None:
-            return prompt[-int(end_length) :]
-        elif middle_length is not None:
-            middle_length = int(middle_length)
-            if len(prompt) <= middle_length:
-                return prompt
-            start = prompt[: math.ceil(middle_length / 2)]
-            end = prompt[-math.floor(middle_length / 2) :]
-            return f"{start}...{end}"
-        return ""
-
-    template = re.sub(
-        r"{{prompt}}|{{prompt:start:(\d+)}}|{{prompt:end:(\d+)}}|{{prompt:middletruncate:(\d+)}}",
-        replacement_function,
-        template,
-    )
-
-    responses = [f'"""{response}"""' for response in responses]
-    responses = "\n\n".join(responses)
-
-    template = template.replace("{{responses}}", responses)
     return template
 
 

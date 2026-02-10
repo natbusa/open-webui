@@ -375,9 +375,9 @@ export const generateTitle = async (
 			// Step 5: Parse the JSON block
 			const parsed = JSON.parse(jsonResponse);
 
-			// Step 6: If there's a "tags" key, return the tags array; otherwise, return an empty array
+			// Step 6: If there's a "title" key, return the title stripped of emojis
 			if (parsed && parsed.title) {
-				return parsed.title;
+				return parsed.title.replace(/\p{Extended_Pictographic}/gu, '').trim();
 			} else {
 				return null;
 			}
@@ -447,9 +447,13 @@ export const generateFollowUps = async (
 			// Step 5: Parse the JSON block
 			const parsed = JSON.parse(jsonResponse);
 
-			// Step 6: If there's a "follow_ups" key, return the follow_ups array; otherwise, return an empty array
+			// Step 6: If there's a "follow_ups" key, return the follow_ups array stripped of emojis
 			if (parsed && parsed.follow_ups) {
-				return Array.isArray(parsed.follow_ups) ? parsed.follow_ups : [];
+				return Array.isArray(parsed.follow_ups)
+					? parsed.follow_ups.map((q: string) =>
+							q.replace(/\p{Extended_Pictographic}/gu, '').trim()
+						)
+					: [];
 			} else {
 				return [];
 			}
@@ -519,9 +523,13 @@ export const generateTags = async (
 			// Step 5: Parse the JSON block
 			const parsed = JSON.parse(jsonResponse);
 
-			// Step 6: If there's a "tags" key, return the tags array; otherwise, return an empty array
+			// Step 6: If there's a "tags" key, return the tags array stripped of emojis
 			if (parsed && parsed.tags) {
-				return Array.isArray(parsed.tags) ? parsed.tags : [];
+				return Array.isArray(parsed.tags)
+					? parsed.tags.map((tag: string) =>
+							tag.replace(/\p{Extended_Pictographic}/gu, '').trim()
+						)
+					: [];
 			} else {
 				return [];
 			}
@@ -534,54 +542,6 @@ export const generateTags = async (
 		console.error('Failed to parse response: ', e);
 		return [];
 	}
-};
-
-export const generateEmoji = async (
-	token: string = '',
-	model: string,
-	prompt: string,
-	chat_id?: string
-) => {
-	let error = null;
-
-	const res = await fetch(`${WEBUI_BASE_URL}/api/v1/tasks/emoji/completions`, {
-		method: 'POST',
-		headers: {
-			Accept: 'application/json',
-			'Content-Type': 'application/json',
-			Authorization: `Bearer ${token}`
-		},
-		body: JSON.stringify({
-			model: model,
-			prompt: prompt,
-			...(chat_id && { chat_id: chat_id })
-		})
-	})
-		.then(async (res) => {
-			if (!res.ok) throw await res.json();
-			return res.json();
-		})
-		.catch((err) => {
-			console.error(err);
-			if ('detail' in err) {
-				error = err.detail;
-			}
-			return null;
-		});
-
-	if (error) {
-		throw error;
-	}
-
-	const response = res?.choices[0]?.message?.content.replace(/["']/g, '') ?? null;
-
-	if (response) {
-		if (/\p{Extended_Pictographic}/u.test(response)) {
-			return response.match(/\p{Extended_Pictographic}/gu)[0];
-		}
-	}
-
-	return null;
 };
 
 export const generateQueries = async (
@@ -636,9 +596,13 @@ export const generateQueries = async (
 			// Step 5: Parse the JSON block
 			const parsed = JSON.parse(jsonResponse);
 
-			// Step 6: If there's a "queries" key, return the queries array; otherwise, return an empty array
+			// Step 6: If there's a "queries" key, return the queries array stripped of emojis
 			if (parsed && parsed.queries) {
-				return Array.isArray(parsed.queries) ? parsed.queries : [];
+				return Array.isArray(parsed.queries)
+					? parsed.queries.map((q: string) =>
+							q.replace(/\p{Extended_Pictographic}/gu, '').trim()
+						)
+					: [];
 			} else {
 				return [];
 			}
@@ -707,9 +671,9 @@ export const generateAutoCompletion = async (
 			// Step 5: Parse the JSON block
 			const parsed = JSON.parse(jsonResponse);
 
-			// Step 6: If there's a "queries" key, return the queries array; otherwise, return an empty array
+			// Step 6: If there's a "text" key, return the text stripped of emojis
 			if (parsed && parsed.text) {
-				return parsed.text;
+				return parsed.text.replace(/\p{Extended_Pictographic}/gu, '').trim();
 			} else {
 				return '';
 			}
