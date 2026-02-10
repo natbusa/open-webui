@@ -138,11 +138,6 @@
 		sourceIds={(sources ?? []).reduce((acc, source) => {
 			let ids = [];
 			source.document.forEach((document, index) => {
-				if (model?.info?.meta?.capabilities?.citations == false) {
-					ids.push('N/A');
-					return ids;
-				}
-
 				const metadata = source.metadata?.[index];
 				const id = metadata?.source ?? 'N/A';
 

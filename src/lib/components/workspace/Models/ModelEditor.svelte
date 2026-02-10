@@ -86,7 +86,6 @@
 		file_upload: true,
 		web_search: true,
 		image_generation: true,
-		citations: true,
 		status_updates: true,
 		usage: undefined,
 		builtin_tools: true
