@@ -743,10 +743,6 @@
 
 	const initNewChat = async () => {
 		console.log('initNewChat');
-		if ($user?.role !== 'admin' && $user?.permissions?.chat?.temporary_enforced) {
-			await temporaryChatEnabled.set(true);
-		}
-
 		if ($settings?.temporaryChatByDefault ?? false) {
 			if ($temporaryChatEnabled === false) {
 				await temporaryChatEnabled.set(true);

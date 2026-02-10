@@ -210,7 +210,7 @@
 
 					<hr class=" border-gray-50 dark:border-gray-850/30 my-2.5 w-full" />
 
-					{#if $user?.role === 'admin' || ($user?.permissions.chat?.system_prompt ?? true)}
+					{#if $user?.role === 'admin'}
 						<div class="my-1">
 							<div class="mb-2 text-xs text-gray-500">{$i18n.t('System Prompt')}</div>
 							<div>

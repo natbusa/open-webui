@@ -206,7 +206,7 @@
 										}}
 									/>
 								{:else if selectedTab == 'permissions'}
-									<Permissions bind:permissions {defaultPermissions} />
+									<Permissions bind:permissions defaultPermissions={custom ? defaultPermissions : permissions} groupMode={custom} />
 								{:else if selectedTab == 'users'}
 									<Users groupId={group?.id} />
 								{/if}

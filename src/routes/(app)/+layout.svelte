@@ -219,10 +219,6 @@
 			if ($page.url.searchParams.get('temporary-chat') === 'true') {
 				temporaryChatEnabled.set(true);
 			}
-
-			if ($user?.role !== 'admin' && $user?.permissions?.chat?.temporary_enforced) {
-				temporaryChatEnabled.set(true);
-			}
 		}
 
 

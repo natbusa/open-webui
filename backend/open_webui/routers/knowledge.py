@@ -32,7 +32,7 @@ from open_webui.storage.provider import Storage
 
 from open_webui.constants import ERROR_MESSAGES
 from open_webui.utils.auth import get_verified_user, get_admin_user
-from open_webui.utils.access_control import has_access, has_permission
+from open_webui.utils.access_control import has_access
 
 
 from open_webui.config import BYPASS_ADMIN_ACCESS_CONTROL
@@ -232,27 +232,6 @@ async def create_new_knowledge(
     user=Depends(get_verified_user),
     db: Session = Depends(get_session),
 ):
-    if user.role != "admin" and not has_permission(
-        user.id, "workspace.knowledge", request.app.state.config.USER_PERMISSIONS, db=db
-    ):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=ERROR_MESSAGES.UNAUTHORIZED,
-        )
-
-    # Check if user can share publicly
-    if (
-        user.role != "admin"
-        and form_data.access_control == None
-        and not has_permission(
-            user.id,
-            "sharing.public_knowledge",
-            request.app.state.config.USER_PERMISSIONS,
-            db=db,
-        )
-    ):
-        form_data.access_control = {}
-
     knowledge = Knowledges.insert_new_knowledge(user.id, form_data, db=db)
 
     if knowledge:
@@ -437,19 +416,6 @@ async def update_knowledge_by_id(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=ERROR_MESSAGES.ACCESS_PROHIBITED,
         )
-
-    # Check if user can share publicly
-    if (
-        user.role != "admin"
-        and form_data.access_control == None
-        and not has_permission(
-            user.id,
-            "sharing.public_knowledge",
-            request.app.state.config.USER_PERMISSIONS,
-            db=db,
-        )
-    ):
-        form_data.access_control = {}
 
     knowledge = Knowledges.update_knowledge_by_id(id=id, form_data=form_data, db=db)
     if knowledge:

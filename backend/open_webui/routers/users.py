@@ -168,24 +168,17 @@ async def get_user_permissisions(
 # User Default Permissions
 ############################
 class WorkspacePermissions(BaseModel):
-    models: bool = True
-    knowledge: bool = True
     models_import: bool = False
     models_export: bool = False
 
 
 class SharingPermissions(BaseModel):
-    models: bool = False
-    public_models: bool = False
-    knowledge: bool = False
-    public_knowledge: bool = False
     notes: bool = False
     public_notes: bool = True
 
 
 class ChatPermissions(BaseModel):
     controls: bool = True
-    system_prompt: bool = True
     params: bool = True
     file_upload: bool = True
     delete: bool = True
@@ -199,7 +192,6 @@ class ChatPermissions(BaseModel):
     tts: bool = True
     call: bool = True
     temporary: bool = True
-    temporary_enforced: bool = False
 
 
 class FeaturesPermissions(BaseModel):

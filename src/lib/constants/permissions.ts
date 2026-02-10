@@ -1,21 +1,14 @@
 export const DEFAULT_PERMISSIONS = {
 	workspace: {
-		models: true,
-		knowledge: true,
 		models_import: false,
 		models_export: false
 	},
 	sharing: {
-		models: false,
-		public_models: false,
-		knowledge: false,
-		public_knowledge: false,
 		notes: false,
 		public_notes: false
 	},
 	chat: {
 		controls: true,
-		system_prompt: true,
 		params: true,
 		file_upload: true,
 		delete: true,
@@ -28,8 +21,7 @@ export const DEFAULT_PERMISSIONS = {
 		stt: true,
 		tts: true,
 		call: true,
-		temporary: true,
-		temporary_enforced: false
+		temporary: true
 	},
 	features: {
 		api_keys: false,
