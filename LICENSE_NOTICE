@@ -8,4 +8,10 @@ This repository contains code governed by multiple licenses based on the date an
 
 3. All code contributed or modified after commit 60d84a3aae9802339705826e9095e272e3c83623 is licensed under the Open WebUI License (see LICENSE).
 
+4. This repository is a fork ("Open WebUI Lite") of the original Open WebUI
+   project, containing substantial modifications by Nate Busa
+   (natalino.busa@gmail.com) with assistance from Claude (Anthropic).
+   All fork modifications are subject to the same license terms as the
+   upstream code from which they derive.
+
 For details on which commits are covered by which license, refer to LICENSE_HISTORY.
