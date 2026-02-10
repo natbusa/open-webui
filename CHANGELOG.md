@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-02-10
+
+### Removed
+
+- **Emoji generation**: removed emoji task endpoint, API, prompt template, `EMOJI_GENERATION` constant, and "Display Emoji in Call" user setting
+- **MoA response generation**: removed `/moa/completions` endpoint, prompt template, `moa_response_generation_template`, and `MOA_RESPONSE_GENERATION` constant (dead code since multi-model removal)
+- **Emojis from title generation prompt**: updated default template to explicitly prohibit emojis and removed emoji examples
+
+### Changed
+
+- Strip emojis from all task generation outputs (titles, tags, follow-ups, queries, autocomplete) on the frontend as a safety net
+
 ## [1.0.0] - 2026-02-09
 
 open-webui-lite is a streamlined mod of [Open WebUI](https://github.com/open-webui/open-webui), forked from v0.7.2. This release strips away features that add complexity without benefit for focused LLM chat workflows, fixes dependency vulnerabilities, and establishes a clean, maintainable codebase.
