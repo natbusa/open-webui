@@ -1,9 +1,8 @@
 <script lang="ts">
-	import dayjs from 'dayjs';
 	import { DropdownMenu } from 'bits-ui';
 	import { onMount, getContext, createEventDispatcher } from 'svelte';
 
-	import { searchKnowledgeBases, searchKnowledgeFiles } from '$lib/apis/knowledge';
+	import { searchKnowledgeBases } from '$lib/apis/knowledge';
 
 	import { flyAndScale } from '$lib/utils/transitions';
 	import { decodeString } from '$lib/utils';
@@ -12,9 +11,6 @@
 	import Search from '$lib/components/icons/Search.svelte';
 	import Tooltip from '$lib/components/common/Tooltip.svelte';
 	import Database from '$lib/components/icons/Database.svelte';
-	import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
-	import ChevronRight from '$lib/components/icons/ChevronRight.svelte';
-	import DocumentPage from '$lib/components/icons/DocumentPage.svelte';
 
 	const i18n = getContext('i18n');
 	const dispatch = createEventDispatcher();
@@ -25,49 +21,22 @@
 
 	let query = '';
 
-	let knowledgeItems = [];
-	let fileItems = [];
-
 	let items = [];
-
-	$: items = [...knowledgeItems, ...fileItems];
 
 	$: if (query !== null) {
 		getItems();
 	}
 
-	const getItems = () => {
-		getKnowledgeItems();
-		getKnowledgeFileItems();
-	};
-
-	const getKnowledgeItems = async () => {
+	const getItems = async () => {
 		const res = await searchKnowledgeBases(localStorage.token, query).catch(() => {
 			return null;
 		});
 
 		if (res) {
-			knowledgeItems = res.items.map((note) => {
+			items = res.items.map((item) => {
 				return {
-					...note,
+					...item,
 					type: 'collection'
-				};
-			});
-		}
-	};
-
-	const getKnowledgeFileItems = async () => {
-		const res = await searchKnowledgeFiles(localStorage.token, query).catch(() => {
-			return null;
-		});
-
-		if (res) {
-			fileItems = res.items.map((file) => {
-				return {
-					...file,
-					type: 'file',
-					name: file.meta?.name || file.filename,
-					description: file.description || ''
 				};
 			});
 		}
@@ -116,17 +85,7 @@
 						{$i18n.t('No knowledge found')}
 					</div>
 				{:else}
-					{#each items as item, i}
-						{#if i === 0 || item?.type !== items[i - 1]?.type}
-							<div class="px-2 text-xs text-gray-500 py-1">
-								{#if item?.type === 'collection'}
-									{$i18n.t('Collections')}
-								{:else if item?.type === 'file'}
-									{$i18n.t('Files')}
-								{/if}
-							</div>
-						{/if}
-
+					{#each items as item}
 						<div
 							class=" px-2.5 py-1 rounded-xl w-full text-left flex justify-between items-center text-sm hover:bg-gray-50 hover:dark:bg-gray-800 hover:dark:text-gray-100 selected-command-option-button"
 						>
@@ -139,15 +98,9 @@
 								}}
 							>
 								<div class="  text-black dark:text-gray-100 flex items-center gap-1 shrink-0">
-									{#if item.type === 'collection'}
-										<Tooltip content={$i18n.t('Collection')} placement="top">
-											<Database className="size-4" />
-										</Tooltip>
-									{:else if item.type === 'file'}
-										<Tooltip content={$i18n.t('File')} placement="top">
-											<DocumentPage className="size-4" />
-										</Tooltip>
-									{/if}
+									<Tooltip content={$i18n.t('Knowledge Base')} placement="top">
+										<Database className="size-4" />
+									</Tooltip>
 
 									<Tooltip
 										content={item.description || decodeString(item?.name)}
