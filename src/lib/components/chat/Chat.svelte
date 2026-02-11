@@ -1625,6 +1625,8 @@
           (file) => file.type === 'image' || (file?.content_type ?? '').startsWith('image/')
         );
 
+        const allFiles = message?.files ?? [];
+
         return {
           role: message.role,
           ...(message.role === 'user' && imageFiles.length > 0
@@ -1644,7 +1646,18 @@
               }
             : {
                 content: message?.merged?.content ?? message.content
-              })
+              }),
+          // Pass file references per message so pipelines can access them
+          ...(allFiles.length > 0
+            ? {
+                _files: allFiles.map((file) => ({
+                  id: file.id,
+                  name: file.name,
+                  type: file.type,
+                  content_type: file.content_type
+                }))
+              }
+            : {})
         };
       })
       .filter((message) => message?.role === 'user' || message?.content?.trim());
