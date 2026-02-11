@@ -2851,7 +2851,7 @@ async def process_chat_response(
                                         )
 
                                         if DETECT_REASONING_TAGS:
-                                            content, content_blocks, _ = (
+                                            content, content_blocks, end_flag = (
                                                 tag_content_handler(
                                                     "reasoning",
                                                     reasoning_tags,
@@ -2860,7 +2860,7 @@ async def process_chat_response(
                                                 )
                                             )
 
-                                            content, content_blocks, _ = (
+                                            content, content_blocks, end_flag = (
                                                 tag_content_handler(
                                                     "solution",
                                                     DEFAULT_SOLUTION_TAGS,
@@ -2868,10 +2868,6 @@ async def process_chat_response(
                                                     content_blocks,
                                                 )
                                             )
-
-
-                                            if end:
-                                                break
 
                                         if ENABLE_REALTIME_CHAT_SAVE:
                                             # Save message in the database
