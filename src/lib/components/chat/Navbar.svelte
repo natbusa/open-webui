@@ -31,6 +31,7 @@
 
   import EllipsisHorizontal from '../icons/EllipsisHorizontal.svelte';
   import ChatCheck from '../icons/ChatCheck.svelte';
+  import ChatPlus from '../icons/ChatPlus.svelte';
   import Knobs from '../icons/Knobs.svelte';
   import { WEBUI_API_BASE_URL } from '$lib/constants';
 
@@ -99,6 +100,17 @@
               <div class="truncate text-lg font-medium">
                 {$models.find((m) => m.id === activeModelId)?.name ?? activeModelId ?? ''}
               </div>
+
+              {#if chat?.id}
+                <a
+                  class="flex items-center gap-1 cursor-pointer px-2 py-0.5 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-850 transition text-gray-600 dark:text-gray-400 text-sm"
+                  href="/c"
+                  draggable="false"
+                >
+                  <ChatPlus className="size-4" strokeWidth="2" />
+                  <span>{$i18n.t('New Chat')}</span>
+                </a>
+              {/if}
             </div>
           {/if}
         </div>
