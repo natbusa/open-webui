@@ -877,13 +877,19 @@ async def generate_chat_completion(
     if prefix_id:
         payload["model"] = payload["model"].replace(f"{prefix_id}.", "")
 
-    # Add user info to the payload if the model is a pipeline
+    # Add user info and callback metadata for pipeline models
     if "pipeline" in model and model.get("pipeline"):
+        from open_webui.routers.pipelines import get_openwebui_metadata
+
         payload["user"] = {
             "name": user.name,
             "id": user.id,
             "email": user.email,
             "role": user.role,
+        }
+        payload["__openwebui"] = {
+            **get_openwebui_metadata(request),
+            "chat_id": metadata.get("chat_id") if metadata else None,
         }
 
     url = request.app.state.config.OPENAI_API_BASE_URLS[idx]

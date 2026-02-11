@@ -192,6 +192,14 @@ ENABLE_FORWARD_USER_INFO_HEADERS = (
     os.environ.get("ENABLE_FORWARD_USER_INFO_HEADERS", "False").lower() == "true"
 )
 
+####################################
+# OPENWEBUI_API_URL
+####################################
+# URL that pipeline servers use to call back to Open WebUI APIs.
+# Set this when the pipeline server runs in a different container/host
+# where request.base_url (e.g. localhost) wouldn't be reachable.
+OPENWEBUI_API_URL = os.environ.get("OPENWEBUI_API_URL", "")
+
 # Experimental feature, may be removed in future
 ENABLE_STAR_SESSIONS_MIDDLEWARE = (
     os.environ.get("ENABLE_STAR_SESSIONS_MIDDLEWARE", "False").lower() == "true"

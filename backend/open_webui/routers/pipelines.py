@@ -10,7 +10,7 @@ import logging
 import requests
 from typing import Optional
 
-from open_webui.env import AIOHTTP_CLIENT_SESSION_SSL
+from open_webui.env import AIOHTTP_CLIENT_SESSION_SSL, OPENWEBUI_API_URL
 
 from open_webui.routers.openai import get_all_models_responses
 
@@ -24,6 +24,19 @@ log = logging.getLogger(__name__)
 # Pipeline Middleware
 #
 ##################################
+
+
+def get_openwebui_metadata(request: Request) -> dict:
+    """Build __openwebui callback metadata for pipeline requests."""
+    base_url = OPENWEBUI_API_URL or str(request.base_url).rstrip("/")
+    token = None
+    auth_header = request.headers.get("authorization", "")
+    if auth_header.startswith("Bearer "):
+        token = auth_header[len("Bearer "):]
+    return {
+        "base_url": base_url,
+        "token": token,
+    }
 
 
 def get_sorted_filters(model_id, models):
@@ -47,6 +60,7 @@ def get_sorted_filters(model_id, models):
 
 async def process_pipeline_inlet_filter(request, payload, user, models):
     user = {"id": user.id, "email": user.email, "name": user.name, "role": user.role}
+    openwebui_meta = get_openwebui_metadata(request)
     model_id = payload["model"]
     sorted_filters = get_sorted_filters(model_id, models)
     model = models[model_id]
@@ -73,6 +87,7 @@ async def process_pipeline_inlet_filter(request, payload, user, models):
             request_data = {
                 "user": user,
                 "body": payload,
+                "__openwebui": openwebui_meta,
             }
 
             try:
@@ -100,6 +115,7 @@ async def process_pipeline_inlet_filter(request, payload, user, models):
 
 async def process_pipeline_outlet_filter(request, payload, user, models):
     user = {"id": user.id, "email": user.email, "name": user.name, "role": user.role}
+    openwebui_meta = get_openwebui_metadata(request)
     model_id = payload["model"]
     sorted_filters = get_sorted_filters(model_id, models)
     model = models[model_id]
@@ -126,6 +142,7 @@ async def process_pipeline_outlet_filter(request, payload, user, models):
             request_data = {
                 "user": user,
                 "body": payload,
+                "__openwebui": openwebui_meta,
             }
 
             try:
