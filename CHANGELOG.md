@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-02-11
+
+### Added
+
+- **Pipeline sidecar architecture**: pipelines are now treated as trusted sidecars; Open WebUI injects `user` context and `__openwebui` callback metadata (base_url, token, chat_id) into pipeline requests so pipes can call back to Open WebUI APIs
+- **File metadata in pipeline messages**: all attached file references (id, name, type, content_type) are passed per message via `_files` field so pipelines can access uploaded documents and images
+- **New Chat button**: added to chat header for quick new conversation creation
+- **Timestamp in action bar**: moved message timestamp display into the action bar
+
+### Removed
+
+- **Pipeline dynamic imports**: removed Upload Pipeline, Install from GitHub URL, and delete pipeline UI/API/backend endpoints
+- **Pipeline inlet/outlet filters**: removed `get_sorted_filters`, `process_pipeline_inlet_filter`, `process_pipeline_outlet_filter`, and all call sites in middleware/chat/tasks; only `pipe()` is used now
+
+### Changed
+
+- Pipelines admin page redesigned: dropdowns replaced with clickable lists (servers, pipelines, valves)
+- `OPENWEBUI_API_URL` env var for configurable pipeline callback URL (falls back to `request.base_url`)
+
+### Fixed
+
+- Content not streaming after thinking phase due to undefined variable
+- Trim whitespace from connection URLs before saving
+
 ## [1.3.0] - 2026-02-10
 
 ### Removed
