@@ -5,12 +5,11 @@ from fastapi import (
     status,
     APIRouter,
 )
-import aiohttp
 import logging
 import requests
 from typing import Optional
 
-from open_webui.env import AIOHTTP_CLIENT_SESSION_SSL, OPENWEBUI_API_URL
+from open_webui.env import OPENWEBUI_API_URL
 
 from open_webui.routers.openai import get_all_models_responses
 
@@ -37,138 +36,6 @@ def get_openwebui_metadata(request: Request) -> dict:
         "base_url": base_url,
         "token": token,
     }
-
-
-def get_sorted_filters(model_id, models):
-    filters = [
-        model
-        for model in models.values()
-        if "pipeline" in model
-        and "type" in model["pipeline"]
-        and model["pipeline"]["type"] == "filter"
-        and (
-            model["pipeline"]["pipelines"] == ["*"]
-            or any(
-                model_id == target_model_id
-                for target_model_id in model["pipeline"]["pipelines"]
-            )
-        )
-    ]
-    sorted_filters = sorted(filters, key=lambda x: x["pipeline"]["priority"])
-    return sorted_filters
-
-
-async def process_pipeline_inlet_filter(request, payload, user, models):
-    user = {"id": user.id, "email": user.email, "name": user.name, "role": user.role}
-    openwebui_meta = get_openwebui_metadata(request)
-    model_id = payload["model"]
-    sorted_filters = get_sorted_filters(model_id, models)
-    model = models[model_id]
-
-    if "pipeline" in model:
-        sorted_filters.append(model)
-
-    async with aiohttp.ClientSession(trust_env=True) as session:
-        for filter in sorted_filters:
-            urlIdx = filter.get("urlIdx")
-
-            try:
-                urlIdx = int(urlIdx)
-            except:
-                continue
-
-            url = request.app.state.config.OPENAI_API_BASE_URLS[urlIdx]
-            key = request.app.state.config.OPENAI_API_KEYS[urlIdx]
-
-            if not key:
-                continue
-
-            headers = {"Authorization": f"Bearer {key}"}
-            request_data = {
-                "user": user,
-                "body": payload,
-                "__openwebui": openwebui_meta,
-            }
-
-            try:
-                async with session.post(
-                    f"{url}/{filter['id']}/filter/inlet",
-                    headers=headers,
-                    json=request_data,
-                    ssl=AIOHTTP_CLIENT_SESSION_SSL,
-                ) as response:
-                    payload = await response.json()
-                    response.raise_for_status()
-            except aiohttp.ClientResponseError as e:
-                res = (
-                    await response.json()
-                    if response.content_type == "application/json"
-                    else {}
-                )
-                if "detail" in res:
-                    raise Exception(response.status, res["detail"])
-            except Exception as e:
-                log.exception(f"Connection error: {e}")
-
-    return payload
-
-
-async def process_pipeline_outlet_filter(request, payload, user, models):
-    user = {"id": user.id, "email": user.email, "name": user.name, "role": user.role}
-    openwebui_meta = get_openwebui_metadata(request)
-    model_id = payload["model"]
-    sorted_filters = get_sorted_filters(model_id, models)
-    model = models[model_id]
-
-    if "pipeline" in model:
-        sorted_filters = [model] + sorted_filters
-
-    async with aiohttp.ClientSession(trust_env=True) as session:
-        for filter in sorted_filters:
-            urlIdx = filter.get("urlIdx")
-
-            try:
-                urlIdx = int(urlIdx)
-            except:
-                continue
-
-            url = request.app.state.config.OPENAI_API_BASE_URLS[urlIdx]
-            key = request.app.state.config.OPENAI_API_KEYS[urlIdx]
-
-            if not key:
-                continue
-
-            headers = {"Authorization": f"Bearer {key}"}
-            request_data = {
-                "user": user,
-                "body": payload,
-                "__openwebui": openwebui_meta,
-            }
-
-            try:
-                async with session.post(
-                    f"{url}/{filter['id']}/filter/outlet",
-                    headers=headers,
-                    json=request_data,
-                    ssl=AIOHTTP_CLIENT_SESSION_SSL,
-                ) as response:
-                    payload = await response.json()
-                    response.raise_for_status()
-            except aiohttp.ClientResponseError as e:
-                try:
-                    res = (
-                        await response.json()
-                        if "application/json" in response.content_type
-                        else {}
-                    )
-                    if "detail" in res:
-                        raise Exception(response.status, res)
-                except Exception:
-                    pass
-            except Exception as e:
-                log.exception(f"Connection error: {e}")
-
-    return payload
 
 
 ##################################

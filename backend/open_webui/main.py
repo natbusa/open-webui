@@ -1387,10 +1387,6 @@ async def get_models(
 
     models = []
     for model in all_models:
-        # Filter out filter pipelines
-        if "pipeline" in model and model["pipeline"].get("type", None) == "filter":
-            continue
-
         # Remove profile image URL to reduce payload size
         if model.get("info", {}).get("meta", {}).get("profile_image_url"):
             model["info"]["meta"].pop("profile_image_url", None)
