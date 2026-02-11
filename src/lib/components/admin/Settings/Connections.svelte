@@ -51,8 +51,8 @@
 
   const updateOpenAIHandler = async () => {
     if (ENABLE_OPENAI_API !== null) {
-      // Remove trailing slashes
-      OPENAI_API_BASE_URLS = OPENAI_API_BASE_URLS.map((url) => url.replace(/\/$/, ''));
+      // Trim whitespace and remove trailing slashes
+      OPENAI_API_BASE_URLS = OPENAI_API_BASE_URLS.map((url) => url.trim().replace(/\/$/, ''));
 
       // Check if API KEYS length is same than API URLS length
       if (OPENAI_API_KEYS.length !== OPENAI_API_BASE_URLS.length) {
