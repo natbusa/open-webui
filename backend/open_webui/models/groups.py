@@ -17,11 +17,9 @@ from sqlalchemy import (
     String,
     Text,
     JSON,
-    and_,
     func,
     ForeignKey,
     cast,
-    or_,
 )
 
 
@@ -160,49 +158,10 @@ class GroupTable:
                 if "query" in filter:
                     query = query.filter(Group.name.ilike(f"%{filter['query']}%"))
 
-                # When share filter is present, member check is handled in the share logic
-                if "share" in filter:
-                    share_value = filter["share"]
-                    member_id = filter.get("member_id")
-                    json_share = Group.data["config"]["share"]
-                    json_share_bool = json_share.as_boolean()
-                    json_share_str = json_share.as_string()
-
-                    if share_value:
-                        # Groups open to anyone: data is null, share is null, or share is true
-                        anyone_can_share = or_(
-                            Group.data.is_(None),
-                            json_share_bool.is_(None),
-                            json_share_bool == True,
-                        )
-
-                        if member_id:
-                            # Also include member-only groups where user is a member
-                            member_groups_subq = (
-                                db.query(GroupMember.group_id)
-                                .filter(GroupMember.user_id == member_id)
-                                .subquery()
-                            )
-                            members_only_and_is_member = and_(
-                                json_share_str == "members",
-                                Group.id.in_(member_groups_subq),
-                            )
-                            query = query.filter(
-                                or_(anyone_can_share, members_only_and_is_member)
-                            )
-                        else:
-                            query = query.filter(anyone_can_share)
-                    else:
-                        query = query.filter(
-                            and_(Group.data.isnot(None), json_share_bool == False)
-                        )
-
-                else:
-                    # Only apply member_id filter when share filter is NOT present
-                    if "member_id" in filter:
-                        query = query.join(
-                            GroupMember, GroupMember.group_id == Group.id
-                        ).filter(GroupMember.user_id == filter["member_id"])
+                if "member_id" in filter:
+                    query = query.join(
+                        GroupMember, GroupMember.group_id == Group.id
+                    ).filter(GroupMember.user_id == filter["member_id"])
 
             groups = query.order_by(Group.updated_at.desc()).all()
             return [
@@ -234,14 +193,6 @@ class GroupTable:
                     query = query.join(
                         GroupMember, GroupMember.group_id == Group.id
                     ).filter(GroupMember.user_id == filter["member_id"])
-
-                if "share" in filter:
-                    #  'share' is stored in data JSON, support both sqlite and postgres
-                    share_value = filter["share"]
-                    print("Filtering by share:", share_value)
-                    query = query.filter(
-                        Group.data.op("->>")("share") == str(share_value)
-                    )
 
             total = query.count()
             query = query.order_by(Group.updated_at.desc())

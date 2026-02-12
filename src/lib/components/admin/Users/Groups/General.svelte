@@ -1,13 +1,11 @@
 <script lang="ts">
   import { getContext } from 'svelte';
   import Textarea from '$lib/components/common/Textarea.svelte';
-  import Tooltip from '$lib/components/common/Tooltip.svelte';
 
   const i18n = getContext('i18n');
 
   export let name = '';
   export let description = '';
-  export let data = {};
 
   export let edit = false;
   export let onDelete: Function = () => {};
@@ -60,43 +58,6 @@
       bind:value={description}
       placeholder={$i18n.t('Group Description')}
     />
-  </div>
-</div>
-
-<hr class="border-gray-50 dark:border-gray-850/30 my-1" />
-
-<div class="flex flex-col w-full mt-2">
-  <div class=" mb-1 text-xs text-gray-500">{$i18n.t('Setting')}</div>
-
-  <div>
-    <div class=" flex w-full justify-between">
-      <div class=" self-center text-xs">
-        {$i18n.t('Who can share to this group')}
-      </div>
-
-      <div class="flex items-center gap-2 p-1">
-        <select
-          class="text-sm bg-transparent dark:bg-gray-900 outline-hidden rounded-lg px-2"
-          value={data?.config?.share ?? true}
-          on:change={(e) => {
-            const value = e.target.value;
-            let shareValue;
-            if (value === 'false') {
-              shareValue = false;
-            } else if (value === 'true') {
-              shareValue = true;
-            } else {
-              shareValue = value;
-            }
-            data.config = { ...(data?.config ?? {}), share: shareValue };
-          }}
-        >
-          <option value={false}>{$i18n.t('No one')}</option>
-          <option value="members">{$i18n.t('Members')}</option>
-          <option value={true}>{$i18n.t('Anyone')}</option>
-        </select>
-      </div>
-    </div>
   </div>
 </div>
 

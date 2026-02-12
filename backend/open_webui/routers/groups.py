@@ -40,14 +40,10 @@ async def get_groups(
 
     filter = {}
 
-    # When share is requested (workspace access control), always filter by membership
-    # so users (including admins) only see groups they belong to.
+    # Workspace components pass share=true so admins also get filtered by membership.
     # Admin management pages call without share and see all groups.
     if user.role != "admin" or share is not None:
         filter["member_id"] = user.id
-
-    if share is not None:
-        filter["share"] = share
 
     groups = Groups.get_groups(filter=filter, db=db)
 

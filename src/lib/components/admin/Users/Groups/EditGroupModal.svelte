@@ -198,7 +198,6 @@
                   <General
                     bind:name
                     bind:description
-                    bind:data
                     {edit}
                     onDelete={() => {
                       showDeleteConfirmDialog = true;
