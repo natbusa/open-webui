@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-02-13
+
+### Added
+
+- **Image carousel modal**: clicking RAG source images opens a full-viewport carousel with solid white/black background, left/right navigation buttons, keyboard arrow keys, wrap-around cycling, and image counter
+- **Source name label**: carousel displays the source document name for the current image
+
+### Fixed
+
+- **Per-source image association**: images from different source documents (e.g., Tokyo.txt vs Rome.txt) now correctly show their own source name in the carousel; backend attaches images per-metadata entry instead of per-source to prevent cross-contamination
+
+### Changed
+
+- Group permissions: removed per-group share config, simplified group filtering
+- Group selection in workspace filtered by membership for all users
+- Build script: double tagging for version + latest
+
 ## [1.4.0] - 2026-02-11
 
 ### Added
