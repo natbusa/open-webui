@@ -18,7 +18,6 @@
   } from '$lib/apis/models';
 
   import { getModels } from '$lib/apis';
-  import { getGroups } from '$lib/apis/groups';
   import { updateUserSettings } from '$lib/apis/users';
 
   import { copyToClipboard } from '$lib/utils';
@@ -45,8 +44,6 @@
   let showModelDeleteConfirm = false;
 
   let selectedModel = null;
-
-  let groupIds = [];
 
   let tags = [];
   let selectedTag = '';
@@ -251,9 +248,6 @@
   onMount(async () => {
     viewOption = localStorage.workspaceViewOption ?? '';
     page = 1;
-
-    let groups = await getGroups(localStorage.token);
-    groupIds = groups.map((group) => group.id);
 
     getFixedLists();
 
