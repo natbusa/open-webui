@@ -125,6 +125,7 @@ class DocumentImagesTable:
                 grouped[doc_image.file_id].append(
                     {
                         "image_file_id": doc_image.image_file_id,
+                        "file_id": doc_image.file_id,
                         "filename": file.filename,
                         "content_type": content_type,
                     }

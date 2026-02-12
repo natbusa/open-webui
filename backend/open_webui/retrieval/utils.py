@@ -1180,26 +1180,24 @@ async def get_sources_from_items(
         if file_ids:
             images_by_file = DocumentImages.get_images_by_file_ids(list(file_ids))
             for source in sources:
-                # Collect images from ALL file_ids in metadata, deduplicated
-                seen_image_ids = set()
-                all_images = []
+                # Attach images per metadata entry so each document gets only its own images
                 for meta in source.get("metadata", []):
                     if isinstance(meta, dict) and meta.get("file_id"):
                         fid = meta["file_id"]
-                        for img in images_by_file.get(fid, []):
-                            if img["image_file_id"] not in seen_image_ids:
-                                seen_image_ids.add(img["image_file_id"])
-                                all_images.append(img)
-                # Fallback to source.id
-                if not all_images:
+                        file_images = images_by_file.get(fid, [])
+                        if file_images:
+                            meta["images"] = file_images
+                # Fallback: if no metadata had images, try source.id
+                has_meta_images = any(
+                    isinstance(m, dict) and m.get("images")
+                    for m in source.get("metadata", [])
+                )
+                if not has_meta_images:
                     source_id = source.get("source", {}).get("id") if source.get("source") else None
                     if source_id:
-                        for img in images_by_file.get(source_id, []):
-                            if img["image_file_id"] not in seen_image_ids:
-                                seen_image_ids.add(img["image_file_id"])
-                                all_images.append(img)
-                if all_images:
-                    source["images"] = all_images
+                        source_images = images_by_file.get(source_id, [])
+                        if source_images:
+                            source["images"] = source_images
     except Exception as e:
         log.debug(f"Error enriching sources with images: {e}")
 

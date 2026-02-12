@@ -22,8 +22,8 @@
   let selectedCitation: any = null;
 
   let showImagePreview = false;
-  let previewImageSrc = '';
-  let previewImageAlt = '';
+  let previewImages: Array<{ src: string; alt: string }> = [];
+  let previewIndex = 0;
 
   export const showSourceModal = (sourceId) => {
     let index;
@@ -94,14 +94,17 @@
           _source = { ..._source, name: id, url: id };
         }
 
+        // Images from per-metadata (preferred) or source-level (fallback)
+        const docImages = metadata?.images ?? source?.images ?? [];
+
         const existingSource = acc.find((item) => item.id === id);
 
         if (existingSource) {
           existingSource.document.push(document);
           existingSource.metadata.push(metadata);
           if (distance !== undefined) existingSource.distances.push(distance);
-          // Merge images from additional sources, deduplicating by image_file_id
-          for (const img of source?.images ?? []) {
+          // Merge images, deduplicating by image_file_id
+          for (const img of docImages) {
             if (!existingSource.images.some((e) => e.image_file_id === img.image_file_id)) {
               existingSource.images.push(img);
             }
@@ -113,7 +116,7 @@
             document: [document],
             metadata: metadata ? [metadata] : [],
             distances: distance !== undefined ? [distance] : [],
-            images: source?.images ?? []
+            images: [...docImages]
           });
         }
       });
@@ -142,7 +145,7 @@
   {showRelevance}
 />
 
-<ImagePreviewModal bind:show={showImagePreview} src={previewImageSrc} alt={previewImageAlt} />
+<ImagePreviewModal bind:show={showImagePreview} images={previewImages} currentIndex={previewIndex} />
 
 {#if citations.length > 0}
   {@const urlCitations = citations.filter((c) => c?.source?.name?.startsWith('http'))}
@@ -177,16 +180,20 @@
   </div>
 
   {@const allImages = citations
-    .flatMap((c) => c.images ?? [])
+    .flatMap((c) => (c.images ?? []).map((img) => ({ ...img, sourceName: c.source?.name })))
     .filter((img, idx, arr) => arr.findIndex((i) => i.image_file_id === img.image_file_id) === idx)}
   {#if allImages.length > 0}
     <div class="flex gap-2 flex-wrap mt-1">
-      {#each allImages as image}
+      {#each allImages as image, idx}
         <button
           class="cursor-pointer"
           on:click={() => {
-            previewImageSrc = `${WEBUI_API_BASE_URL}/files/${image.image_file_id}/content`;
-            previewImageAlt = image.filename;
+            previewImages = allImages.map((img) => ({
+              src: `${WEBUI_API_BASE_URL}/files/${img.image_file_id}/content`,
+              alt: img.filename,
+              sourceName: img.sourceName
+            }));
+            previewIndex = idx;
             showImagePreview = true;
           }}
         >

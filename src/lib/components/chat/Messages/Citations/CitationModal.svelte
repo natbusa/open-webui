@@ -19,8 +19,8 @@
   let mergedDocuments = [];
 
   let showImagePreview = false;
-  let previewImageSrc = '';
-  let previewImageAlt = '';
+  let previewImages: Array<{ src: string; alt: string }> = [];
+  let previewIndex = 0;
 
   function calculatePercentage(distance: number) {
     if (typeof distance !== 'number') return null;
@@ -39,6 +39,8 @@
     return 'bg-red-200 dark:bg-red-800 text-red-800 dark:text-red-200';
   }
 
+  let citationImages = [];
+
   $: if (citation) {
     mergedDocuments = citation.document?.map((c, i) => {
       return {
@@ -53,6 +55,8 @@
         (a, b) => (b.distance ?? Infinity) - (a.distance ?? Infinity)
       );
     }
+
+    citationImages = citation.images ?? [];
   }
 
   const decodeString = (str: string) => {
@@ -229,18 +233,22 @@
           </div>
         {/each}
 
-        {#if citation?.images?.length > 0}
+        {#if citationImages.length > 0}
           <div class="mt-3 pt-3 border-t dark:border-gray-700">
             <div class="text-sm font-medium dark:text-gray-300 mb-2">
               {$i18n.t('Images')}
             </div>
             <div class="grid grid-cols-2 gap-2">
-              {#each citation.images as image}
+              {#each citationImages as image, idx}
                 <button
                   class="cursor-pointer"
                   on:click={() => {
-                    previewImageSrc = `${WEBUI_API_BASE_URL}/files/${image.image_file_id}/content`;
-                    previewImageAlt = image.filename;
+                    previewImages = citationImages.map((img) => ({
+                      src: `${WEBUI_API_BASE_URL}/files/${img.image_file_id}/content`,
+                      alt: img.filename,
+                      sourceName: citation.source?.name
+                    }));
+                    previewIndex = idx;
                     showImagePreview = true;
                   }}
                 >
@@ -259,4 +267,4 @@
   </div>
 </Modal>
 
-<ImagePreviewModal bind:show={showImagePreview} src={previewImageSrc} alt={previewImageAlt} />
+<ImagePreviewModal bind:show={showImagePreview} images={previewImages} currentIndex={previewIndex} />
