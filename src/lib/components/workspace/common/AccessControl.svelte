@@ -42,7 +42,7 @@
   };
 
   onMount(async () => {
-    groups = await getGroups(localStorage.token, true);
+    groups = await getGroups(localStorage.token);
 
     if (accessControl === null) {
       initPublicAccess();

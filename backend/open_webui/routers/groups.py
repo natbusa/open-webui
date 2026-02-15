@@ -33,16 +33,14 @@ router = APIRouter()
 
 @router.get("/", response_model=list[GroupResponse])
 async def get_groups(
-    share: Optional[bool] = None,
     user=Depends(get_verified_user),
     db: Session = Depends(get_session),
 ):
 
     filter = {}
 
-    # Workspace components pass share=true so admins also get filtered by membership.
-    # Admin management pages call without share and see all groups.
-    if user.role != "admin" or share is not None:
+    # Admins see all groups; regular users only see groups they belong to.
+    if user.role != "admin":
         filter["member_id"] = user.id
 
     groups = Groups.get_groups(filter=filter, db=db)

@@ -31,15 +31,10 @@ export const createNewGroup = async (token: string, group: object) => {
   return res;
 };
 
-export const getGroups = async (token: string = '', share?: boolean) => {
+export const getGroups = async (token: string = '') => {
   let error = null;
 
-  const searchParams = new URLSearchParams();
-  if (share !== undefined) {
-    searchParams.append('share', String(share));
-  }
-
-  const res = await fetch(`${WEBUI_API_BASE_URL}/groups/?${searchParams.toString()}`, {
+  const res = await fetch(`${WEBUI_API_BASE_URL}/groups/`, {
     method: 'GET',
     headers: {
       Accept: 'application/json',

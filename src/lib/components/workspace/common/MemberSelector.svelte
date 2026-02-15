@@ -65,7 +65,7 @@
   }
 
   onMount(async () => {
-    groups = await getGroups(localStorage.token, true);
+    groups = await getGroups(localStorage.token);
     if (userIds.length > 0) {
       userIds.forEach(async (id) => {
         const res = await getUserById(localStorage.token, id).catch((error) => {
