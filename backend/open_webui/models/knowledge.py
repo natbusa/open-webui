@@ -26,9 +26,11 @@ from sqlalchemy import (
     Text,
     JSON,
     UniqueConstraint,
+    func,
     or_,
 )
 
+from open_webui.models.document_images import DocumentImage
 from open_webui.utils.access_control import has_access
 from open_webui.utils.db.access_control import has_permission
 
@@ -126,6 +128,8 @@ class KnowledgeFileModel(BaseModel):
 ####################
 class KnowledgeUserModel(KnowledgeModel):
     user: Optional[UserResponse] = None
+    file_count: Optional[int] = None
+    image_count: Optional[int] = None
 
 
 class KnowledgeResponse(KnowledgeModel):
@@ -250,6 +254,40 @@ class KnowledgeTable:
 
                 items = query.all()
 
+                # Batch-compute file counts and image counts
+                kb_ids = [kb.id for kb, _ in items]
+
+                file_counts = {}
+                image_counts = {}
+                if kb_ids:
+                    # File counts per knowledge base
+                    fc_rows = (
+                        db.query(
+                            KnowledgeFile.knowledge_id,
+                            func.count(KnowledgeFile.id),
+                        )
+                        .filter(KnowledgeFile.knowledge_id.in_(kb_ids))
+                        .group_by(KnowledgeFile.knowledge_id)
+                        .all()
+                    )
+                    file_counts = {kid: cnt for kid, cnt in fc_rows}
+
+                    # Image counts per knowledge base (images linked to files in each KB)
+                    ic_rows = (
+                        db.query(
+                            KnowledgeFile.knowledge_id,
+                            func.count(DocumentImage.id),
+                        )
+                        .join(
+                            DocumentImage,
+                            DocumentImage.file_id == KnowledgeFile.file_id,
+                        )
+                        .filter(KnowledgeFile.knowledge_id.in_(kb_ids))
+                        .group_by(KnowledgeFile.knowledge_id)
+                        .all()
+                    )
+                    image_counts = {kid: cnt for kid, cnt in ic_rows}
+
                 knowledge_bases = []
                 for knowledge_base, user in items:
                     knowledge_bases.append(
@@ -262,6 +300,12 @@ class KnowledgeTable:
                                     UserModel.model_validate(user).model_dump()
                                     if user
                                     else None
+                                ),
+                                "file_count": file_counts.get(
+                                    knowledge_base.id, 0
+                                ),
+                                "image_count": image_counts.get(
+                                    knowledge_base.id, 0
                                 ),
                             }
                         )

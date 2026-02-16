@@ -7,7 +7,8 @@
   import { onMount, getContext, tick } from 'svelte';
   const i18n = getContext('i18n');
 
-  import { WEBUI_NAME, knowledge, user } from '$lib/stores';
+
+  import { WEBUI_NAME, knowledge, user, config } from '$lib/stores';
   import {
     deleteKnowledgeById,
     searchKnowledgeBases,
@@ -247,8 +248,20 @@
                 <div class=" self-center flex-1 justify-between">
                   <div class="flex items-center justify-between -my-1 h-8">
                     <div class=" flex gap-2 items-center justify-between w-full">
-                      <div>
+                      <div class="flex gap-2 items-center">
                         <Badge type="success" content={$i18n.t('Collection')} />
+
+                        {#if $config?.knowledge?.max_file_count}
+                          <span class="text-xs text-gray-400 dark:text-gray-500">
+                            {item.file_count ?? 0}/{$config.knowledge.max_file_count} {$i18n.t('docs')}
+                          </span>
+                        {/if}
+
+                        {#if $config?.knowledge?.max_image_count}
+                          <span class="text-xs text-gray-400 dark:text-gray-500">
+                            {item.image_count ?? 0}/{$config.knowledge.max_image_count} {$i18n.t('img')}
+                          </span>
+                        {/if}
                       </div>
 
                       {#if !item?.write_access}
