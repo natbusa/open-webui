@@ -257,9 +257,9 @@
                           </span>
                         {/if}
 
-                        {#if $config?.knowledge?.max_image_count}
+                        {#if $config?.knowledge?.max_image_count && $config?.knowledge?.max_file_count}
                           <span class="text-xs text-gray-400 dark:text-gray-500">
-                            {item.image_count ?? 0}/{$config.knowledge.max_image_count} {$i18n.t('img')}
+                            {item.image_count ?? 0}/{$config.knowledge.max_image_count * $config.knowledge.max_file_count} {$i18n.t('img')}
                           </span>
                         {/if}
                       </div>

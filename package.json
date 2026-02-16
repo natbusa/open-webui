@@ -1,6 +1,6 @@
 {
   "name": "open-webui-lite",
-  "version": "1.5.2",
+  "version": "1.5.3",
   "private": true,
   "scripts": {
     "dev": "vite dev --host",

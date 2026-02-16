@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.3] - 2026-02-16
+
+### Changed
+
+- Knowledge base defaults: 25 files max (was 100), 4 images per file (was 10)
+- Collection image limit display: denominator is now `max_images × max_files` (e.g. 4×25=100)
+
 ## [1.5.2] - 2026-02-16
 
 ### Added

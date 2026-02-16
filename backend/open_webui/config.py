@@ -2356,7 +2356,7 @@ KNOWLEDGE_MAX_FILE_COUNT = PersistentConfig(
     "knowledge.max_file_count",
     int(os.environ.get("KNOWLEDGE_MAX_FILE_COUNT"))
     if os.environ.get("KNOWLEDGE_MAX_FILE_COUNT")
-    else 100,
+    else 25,
 )
 
 KNOWLEDGE_MAX_IMAGE_COUNT = PersistentConfig(
@@ -2364,7 +2364,7 @@ KNOWLEDGE_MAX_IMAGE_COUNT = PersistentConfig(
     "knowledge.max_image_count",
     int(os.environ.get("KNOWLEDGE_MAX_IMAGE_COUNT"))
     if os.environ.get("KNOWLEDGE_MAX_IMAGE_COUNT")
-    else 10,
+    else 4,
 )
 
 FILE_IMAGE_COMPRESSION_WIDTH = PersistentConfig(
