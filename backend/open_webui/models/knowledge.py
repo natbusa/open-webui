@@ -492,6 +492,16 @@ class KnowledgeTable:
             print(e)
             return KnowledgeFileListResponse(items=[], total=0)
 
+    def get_file_count(
+        self, knowledge_id: str, db: Optional[Session] = None
+    ) -> int:
+        with get_db_context(db) as db:
+            return (
+                db.query(KnowledgeFile)
+                .filter(KnowledgeFile.knowledge_id == knowledge_id)
+                .count()
+            )
+
     def get_files_by_id(
         self, knowledge_id: str, db: Optional[Session] = None
     ) -> list[FileModel]:

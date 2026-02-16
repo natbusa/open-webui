@@ -2351,6 +2351,22 @@ RAG_FILE_MAX_SIZE = PersistentConfig(
     ),
 )
 
+KNOWLEDGE_MAX_FILE_COUNT = PersistentConfig(
+    "KNOWLEDGE_MAX_FILE_COUNT",
+    "knowledge.max_file_count",
+    int(os.environ.get("KNOWLEDGE_MAX_FILE_COUNT"))
+    if os.environ.get("KNOWLEDGE_MAX_FILE_COUNT")
+    else 100,
+)
+
+KNOWLEDGE_MAX_IMAGE_COUNT = PersistentConfig(
+    "KNOWLEDGE_MAX_IMAGE_COUNT",
+    "knowledge.max_image_count",
+    int(os.environ.get("KNOWLEDGE_MAX_IMAGE_COUNT"))
+    if os.environ.get("KNOWLEDGE_MAX_IMAGE_COUNT")
+    else 10,
+)
+
 FILE_IMAGE_COMPRESSION_WIDTH = PersistentConfig(
     "FILE_IMAGE_COMPRESSION_WIDTH",
     "file.image_compression_width",

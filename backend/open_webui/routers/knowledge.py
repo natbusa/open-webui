@@ -525,6 +525,16 @@ def add_file_to_knowledge_by_id(
             detail=ERROR_MESSAGES.ACCESS_PROHIBITED,
         )
 
+    # Check file count limit
+    max_file_count = request.app.state.config.KNOWLEDGE_MAX_FILE_COUNT
+    if max_file_count is not None:
+        current_count = Knowledges.get_file_count(id, db=db)
+        if current_count >= max_file_count:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Knowledge base file limit reached ({max_file_count} files maximum)",
+            )
+
     file = Files.get_file_by_id(form_data.file_id, db=db)
     if not file:
         raise HTTPException(
@@ -733,6 +743,7 @@ def remove_file_from_knowledge_by_id(
 
 @router.post("/{knowledge_id}/file/{file_id}/images/add")
 async def add_image_to_document(
+    request: Request,
     knowledge_id: str,
     file_id: str,
     image: UploadFile = FastAPIFile(...),
@@ -764,6 +775,16 @@ async def add_image_to_document(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="File does not belong to this knowledge base",
         )
+
+    # Check image count limit
+    max_image_count = request.app.state.config.KNOWLEDGE_MAX_IMAGE_COUNT
+    if max_image_count is not None:
+        current_images = DocumentImages.get_images_by_file_id(file_id, db=db)
+        if len(current_images) >= max_image_count:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Document image limit reached ({max_image_count} images maximum per document)",
+            )
 
     # Validate uploaded file is an image
     if not image.content_type or not image.content_type.startswith("image/"):
@@ -1059,6 +1080,22 @@ async def add_files_to_knowledge_batch(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=ERROR_MESSAGES.ACCESS_PROHIBITED,
         )
+
+    # Check file count limit
+    max_file_count = request.app.state.config.KNOWLEDGE_MAX_FILE_COUNT
+    if max_file_count is not None:
+        current_count = Knowledges.get_file_count(id, db=db)
+        remaining = max_file_count - current_count
+        if remaining <= 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Knowledge base file limit reached ({max_file_count} files maximum)",
+            )
+        if len(form_data) > remaining:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Cannot add {len(form_data)} files: only {remaining} of {max_file_count} slots remaining",
+            )
 
     # Get files content
     log.info(f"files/batch/add - {len(form_data)} files")

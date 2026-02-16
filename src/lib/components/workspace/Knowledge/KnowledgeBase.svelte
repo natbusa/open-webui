@@ -188,9 +188,21 @@
     const files = target.files;
     if (!files || !knowledge?.id || !selectedFileId) return;
 
+    const maxImageCount = $config?.knowledge?.max_image_count;
+
     isUploadingImage = true;
     try {
       for (const file of Array.from(files)) {
+        // Check image count limit
+        if (maxImageCount && selectedFileImages.length >= maxImageCount) {
+          toast.error(
+            $i18n.t('Document image limit reached ({{maxCount}} images maximum per document).', {
+              maxCount: maxImageCount
+            })
+          );
+          break;
+        }
+
         const result = await addImageToDocumentFile(
           localStorage.token,
           knowledge.id,
@@ -326,6 +338,20 @@
 
     if (fileItem.size == 0) {
       toast.error($i18n.t('You cannot upload an empty file.'));
+      return null;
+    }
+
+    // Check knowledge base file count limit
+    if (
+      $config?.knowledge?.max_file_count &&
+      fileItemsTotal !== null &&
+      fileItemsTotal >= $config.knowledge.max_file_count
+    ) {
+      toast.error(
+        $i18n.t('Knowledge base file limit reached ({{maxCount}} files maximum).', {
+          maxCount: $config.knowledge.max_file_count
+        })
+      );
       return null;
     }
 
@@ -903,12 +929,13 @@
               />
 
               <div class="shrink-0 mr-2.5">
-                {#if fileItemsTotal}
+                {#if fileItemsTotal !== null}
                   <div class="text-xs text-gray-500">
-                    <!-- {$i18n.t('{{COUNT}} files')} -->
-                    {$i18n.t('{{COUNT}} files', {
-                      COUNT: fileItemsTotal
-                    })}
+                    {#if $config?.knowledge?.max_file_count}
+                      {fileItemsTotal} / {$config.knowledge.max_file_count} {$i18n.t('files')}
+                    {:else}
+                      {$i18n.t('{{COUNT}} files', { COUNT: fileItemsTotal })}
+                    {/if}
                   </div>
                 {/if}
               </div>
@@ -1156,11 +1183,18 @@
                     <div class="flex items-center justify-between mb-2">
                       <div class="text-sm font-medium dark:text-gray-300">
                         {$i18n.t('Document Images')}
+                        {#if $config?.knowledge?.max_image_count}
+                          <span class="text-xs font-normal text-gray-400">
+                            ({selectedFileImages.length} / {$config.knowledge.max_image_count})
+                          </span>
+                        {/if}
                       </div>
                       {#if knowledge?.write_access}
                         <button
                           class="text-xs px-2 py-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 dark:text-gray-300 transition disabled:opacity-50"
-                          disabled={isUploadingImage}
+                          disabled={isUploadingImage ||
+                            ($config?.knowledge?.max_image_count &&
+                              selectedFileImages.length >= $config.knowledge.max_image_count)}
                           on:click={() => imageInputElement?.click()}
                         >
                           {#if isUploadingImage}
