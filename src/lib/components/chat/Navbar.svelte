@@ -58,18 +58,11 @@
 
 <nav
   class="sticky top-0 z-30 w-full {chat?.id
-    ? 'pt-0.5 pb-1'
-    : 'pt-1 pb-1'} -mb-12 flex flex-col items-center drag-region"
+    ? 'pt-0 pb-1'
+    : 'pt-0 pb-1'} -mb-12 flex flex-col items-center drag-region"
 >
-  <div class="flex items-center w-full pl-1.5 pr-1">
-    <div
-      id="navbar-bg-gradient-to-b"
-      class="{chat?.id
-        ? 'visible'
-        : 'invisible'} bg-linear-to-b via-40% to-97% from-white/90 via-white/50 to-transparent dark:from-gray-900/90 dark:via-gray-900/50 dark:to-transparent pointer-events-none absolute inset-0 -bottom-10 z-[-1]"
-    ></div>
-
-    <div class=" flex max-w-full w-full mx-auto px-1.5 md:px-2 pt-0.5 bg-transparent">
+  <div class="flex items-center w-full pl-2 pr-1 bg-white dark:bg-gray-900 shadow-[0_5px_5px_-2px_var(--color-white,#f5efe8)] dark:shadow-[0_5px_5px_-2px_var(--color-gray-900,#1a1210)]">
+    <div class=" flex max-w-full w-full mx-auto px-1.5 md:px-2 pt-0.5">
       <div class="flex items-center w-full max-w-full">
         {#if $mobile && !$showSidebar}
           <div
